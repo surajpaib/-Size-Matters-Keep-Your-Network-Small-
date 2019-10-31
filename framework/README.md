@@ -6,7 +6,7 @@ This folder will contain the code for the framework. Current agreement on the fr
     ├── BaseClass.py                 # Base for the classes below (parent class)
     ├── Pruning.py                   # Incorporates various pruning strategies
     ├── Growing.py                   # Incorporates various growing strategies
-    ├── Shifting.py		     # Combines the previous two to achieve shifting 
+    ├── Shifting.py                  # Combines the previous two to achieve shifting 
     └── README.md
    
    
