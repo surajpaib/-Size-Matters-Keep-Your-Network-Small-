@@ -51,3 +51,26 @@ def get_activation_scheme(params):
         activations_list.append(F.softmax)
 
     return activations_list
+
+
+def get_layer_type_scheme(params):
+    types_list = []
+
+    for hidden_layer in params['hidden_layer']:
+        if 'type' in hidden_layer:
+            layer_type = hidden_layer['type']
+            if layer_type in dir(nn):
+                types_list.append(eval('nn.'+layer_type))
+                continue
+        types_list.append(nn.Linear)
+        
+    if 'type' in params['output_layer']:
+        layer_type = params['output_layer']['type']
+        if layer_type in dir(nn):
+            types_list.append(eval('nn.'+layer_type))
+        else:
+            types_list.append(nn.Linear)
+    else:
+        types_list.append(nn.Linear)
+
+    return types_list
