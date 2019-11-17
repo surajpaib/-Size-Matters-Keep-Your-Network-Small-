@@ -1,1 +1,10 @@
 mrpvenv/
+\.vscode/
+
+framework/experimentation/MNIST/raw/
+
+framework/experimentation/MNIST/processed/
+
+framework/experimentation/\.ipynb_checkpoints/
+
+data/__pycache__/
