@@ -17,18 +17,16 @@ class Network(nn.Module):
         # Construct the Network Definition
         self.input_layer = self.type_scheme[0](network_params['input_layer']['units'], \
             network_params['hidden_layer'][0]['units'])
-        self.hidden_layers = []
-        for i in range(1, len(network_params['hidden_layer'])):
-            self.hidden_layers.append(self.type_scheme[i](network_params['hidden_layer'][i-1]['units'],\
-                network_params['hidden_layer'][i]['units']))
+        self.hidden_layers = nn.ModuleList()
+        for i in range(len(network_params['hidden_layer']) - 1):
+            self.hidden_layers.append(self.type_scheme[i](network_params['hidden_layer'][i]['units'],\
+                network_params['hidden_layer'][i+1]['units']))
         self.output_layer = self.type_scheme[-1](network_params['hidden_layer'][-1]['units'],\
                 network_params['output_layer']['units'])
         # Get choice of activations or if missing default to values
         self.activation_scheme = get_activation_scheme(network_params)
-        print(self.activation_scheme)
 
     def forward(self, x):
-        print(self.activation_scheme)
         x = self.activation_scheme[0](self.input_layer(x))
         for (i, layer) in enumerate(self.hidden_layers):
             x = self.activation_scheme[i+1](layer(x))
