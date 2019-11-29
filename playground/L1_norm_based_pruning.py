@@ -5,7 +5,7 @@
 
 
 import sys
-sys.path.append('../framework')
+sys.path.append('framework')
 from NetworkClass import Network
 import torch.nn.functional as F
 from torch import nn
@@ -15,6 +15,17 @@ import torch
 import torch.nn as nn
 import copy
 import time
+import argparse
+
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--pruning_perc', type=float, default=0.1)
+parser.add_argument('--epochs', type=int, default=25)
+parser.add_argument('--prune_iter', type=int, default=5)
+
+
+
+args = parser.parse_args()
 
 
 # In[2]:
@@ -34,7 +45,7 @@ class ReshapeTransform:
 # Define Constants
 batch_size_train = 64
 batch_size_test = 1000
-n_epochs = 4
+n_epochs = int(float(args.epochs)/args.prune_iter)
 learning_rate = 0.01
 momentum = 0.5
 log_interval = 10
@@ -300,7 +311,7 @@ for epoch in range(1, n_epochs + 1):
 print("Model Parameters: ", count_parameters(model))
 
 # Perform Pruning 5 times in succession
-for i in range(2):
+for i in range(args.prune_iter-1):
     model, optimizer = prune_train(model, optimizer, 0.2)
     print("Model Parameters: ", count_parameters(model))
 
