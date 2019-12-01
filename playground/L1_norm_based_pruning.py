@@ -28,8 +28,6 @@ parser.add_argument('--prune_iter', type=int, default=5)
 args = parser.parse_args()
 
 
-# In[2]:
-
 
 class ReshapeTransform:
     def __init__(self, new_size):
@@ -38,8 +36,6 @@ class ReshapeTransform:
     def __call__(self, img):
         return torch.reshape(img, self.new_size)
 
-
-# In[3]:
 
 
 # Define Constants
@@ -52,7 +48,6 @@ log_interval = 10
 random_seed = 1
 
 
-# In[4]:
 
 
 # Model Definition
@@ -63,11 +58,12 @@ model_dict = {
                 
                 },
             'hidden_layer': [{
-                    "units": 400, 
+                    "units": 500, 
+                    "activation": "relu",
                     "type": "Linear"
                 }, 
                 {
-                    "units": 50, 
+                    "units": 300, 
                     "activation": "relu",
                     "type": "Linear"
 
@@ -83,14 +79,11 @@ model_dict = {
 model = Network(model_dict)
 
 
-# In[5]:
-
 
 for (layer, param) in enumerate(model.parameters()):
     print("Layer {} , Parameters: {}".format(layer, param.shape))
 
 
-# In[6]:
 
 
 # Load Datasets
@@ -115,16 +108,12 @@ test_loader = torch.utils.data.DataLoader(
   batch_size=batch_size_test, shuffle=True)
 
 
-# In[7]:
-
 
 # Define Loss and Optimizer
 
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
-
-# In[8]:
 
 
 train_losses = []
@@ -133,7 +122,6 @@ test_losses = []
 test_counter = [i*len(train_loader.dataset) for i in range(n_epochs + 1)]
 
 
-# In[9]:
 
 
 def train(mod, optim, epoch):
@@ -153,8 +141,6 @@ def train(mod, optim, epoch):
         (batch_idx*64) + ((epoch-1)*len(train_loader.dataset)))
 
 
-# In[10]:
-
 
 def test(mod):
   mod.eval()
@@ -173,16 +159,9 @@ def test(mod):
     100. * correct / len(test_loader.dataset)))
 
 
-# In[11]:
-
-
 test(model)
 
 
-    
-
-
-# In[74]:
 
 
 import numpy as np
@@ -225,25 +204,6 @@ def prune_neurons(nn_model, pruning_perc=0.1):
             y = idx_weights
             
         idx_weights.data = y
-#     for i, neuron_indexes in enumerate(neurons_to_prune):
-#         index_shift = 0
-#         for neuron_idx in neuron_indexes:
-#             idx_weights = param_list[i]
-#             if i < len(param_list) - 2:
-#                 y = torch.cat((idx_weights[0:neuron_idx + index_shift], idx_weights[neuron_idx+1 + index_shift:]))
-#                 if i > 1 and len(idx_weights.shape) > 1:
-
-#                     y = torch.cat((y[:, 0:neuron_idx+index_shift-1], y[:, neuron_idx+index_shift:]), axis=1)
-#                 index_shift = index_shift - 1
-
-#             elif i > 1 and len(idx_weights.shape) > 1:
-#                 y = torch.cat((idx_weights[:, 0:neuron_idx-1+index_shift], idx_weights[:, neuron_idx+index_shift:]), axis=1)
-#                 index_shift = index_shift - 1
-
-#             else:
-#                 y = idx_weights
-#             idx_weights.data = y  
-            
        
     print("Post Pruning /n")
     for (layer, param) in enumerate(nn_model.parameters()):
@@ -325,13 +285,6 @@ else:
 
 print("Model Parameters: ", count_parameters(model))
 
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 

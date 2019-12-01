@@ -3,16 +3,16 @@
 ### #SBATCH directives need to be in the first part of the jobscript
 
 ### Job name
-SBATCH --job-name=MRP_dke
+#SBATCH --job-name=MRP_dke
 
 ### Output path for stdout and stderr
 ### %J is the job ID, %I is the array ID
-SBATCH --output=output_%J_mrprun.txt
+#SBATCH --output=output_%J_mrprun.txt
 
 ### Request the time you need for execution. The full format is D-HH:MM:SS
 ### You must at least specify minutes OR days and hours and may add or
 ### leave out any other parameters
-SBATCH --time=5-00:00:00
+#SBATCH --time=1-00:00:00
 
 ### Request the amount of memory you need for your job.
 ### You can specify this in either MB (1024M) or GB (4G).
