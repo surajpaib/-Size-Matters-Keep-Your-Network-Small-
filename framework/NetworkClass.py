@@ -33,6 +33,13 @@ class Network(nn.Module):
         x = self.activation_scheme[-1](self.output_layer(x))
         return x
 
+    def set_optimizer(self, optim):
+        pass
+
+    def set_loss(self, loss):
+        pass
+
+
 if __name__ == "__main__":
     # Provide Network Description Here. 
     # Scalable to any number of units and activations within the Pytorch Functional API

@@ -183,13 +183,12 @@ def prune_neurons(nn_model, pruning_perc=0.1):
                 prune_idx = np.argwhere(np.array(l1_norm_layer) > threshold).flatten()
            
                 neurons_to_prune.append(prune_idx)
-                neurons_to_prune.append(prune_idx)                
 
                 
     # Modify the model parameters to update the shape of the network after pruning
     param_list = list(nn_model.parameters())
     
-    
+    neurons_to_prune = [val for val in neurons_to_prune for _ in (0, 1)]
     for i, neuron_idx in enumerate(neurons_to_prune):
         idx_weights = param_list[i]
         if i < len(param_list) - 2:
@@ -232,10 +231,9 @@ def prune_train(model, optimizer, pruning_perc=0.1):
             new_model_dict['network']['hidden_layer'][i]['units'] = new_model.state_dict()['hidden_layers.{}.weight'.format(i-1)].shape[0]
 
     # Create new model based on updated network definition
-    updated_model = Network(new_model_dict)
-    
+    updated_model = new_model
     # Load previously trained parameters into the new model
-    updated_model.load_state_dict(new_model.state_dict())
+    # updated_model.load_state_dict(new_model.state_dict())
     
     # Update Optimizers and set state from the previous optimizer
     criterion = nn.CrossEntropyLoss()
