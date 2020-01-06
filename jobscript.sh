@@ -19,7 +19,7 @@
 
 #SBATCH --nodes=1
 #SBATCH --mem=40G
-#SBATCH --cpus-per-task=24
+#SBATCH --cpus-per-task=48
 #SBATCH --ntasks-per-node=1
 
 ### Request a host with a Volta GPU
@@ -40,4 +40,4 @@ pip install --user -r requirements.txt
 
 #python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../3D_460_patchified_norm/ --model paired_revgan3d --name 3d_460 --which_model_netG edsrF_generator_3d --gpu_ids 0,1 --batchSize 2 --which_model_netD n_layers --n_layers_D 2 --lr_G 0.0001 --lr_D 0.0004
 
-python3 playground/pruning_runner.py
+python application/grid_search.py --epochs 50
