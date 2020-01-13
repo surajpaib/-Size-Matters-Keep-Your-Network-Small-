@@ -74,5 +74,3 @@ def get_layer_type_scheme(params):
         types_list.append(nn.Linear)
 
     return types_list
-
-

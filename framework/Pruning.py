@@ -1,7 +1,11 @@
 from BaseClass import BaseClass
 import copy
 import torch
+import matplotlib.pyplot as plt
+import time
 import numpy as np
+from captum.attr import LayerConductance
+
 
 class Pruning(BaseClass):
     def __init__(self, percentage):
@@ -12,6 +16,11 @@ class Pruning(BaseClass):
         self.new_model = copy.deepcopy(model)
         print("Set Model for Pruning: \n")
         self.print_model_structure(self.prev_model)
+
+
+    def set_test_data(self, data):
+        self.test_data = data[0]
+        self.test_target = data[1]
 
 
     def set_optimizer(self, optim):
@@ -38,15 +47,49 @@ class Pruning(BaseClass):
         # Access model weights
         self.neurons_retained = []
 
-        for p in self.new_model.parameters():
-                if len(p.data.size()) != 1:
-                    normed_weights = p.data.abs()
-                    l1_norm_layer = [torch.sum(normed_weights[neuron_idx, :]).item() for neuron_idx in range(normed_weights.shape[0])]
-                    threshold = np.percentile(np.array(l1_norm_layer), self.pruning_perc * 100)
-                    prune_idx = np.argwhere(np.array(l1_norm_layer) > threshold).flatten()
-                    self.neurons_retained.append(prune_idx)
+        for p in self.new_model.named_parameters():
+            prune_idx = self.strategy(p)
+            if len(prune_idx) > 0:
+                self.neurons_retained.append(prune_idx)
 
 
+    def l1_norm_pruning(self, p):
+        p = p[1]
+        print("Size:", len(p.data.size()))
+        if len(p.data.size()) != 1:
+            normed_weights = p.data.abs()
+            l1_norm_layer = [torch.sum(normed_weights[neuron_idx, :]).item() for neuron_idx in range(normed_weights.shape[0])]
+            threshold = np.percentile(np.array(l1_norm_layer), self.pruning_perc * 100)
+            prune_idx = np.argwhere(np.array(l1_norm_layer) > threshold).flatten()
+        else:
+            prune_idx = []
+
+        return prune_idx
+            
+
+    def layer_conductance_pruning(self, p):
+        _layer_name = p[0].split(".")
+        if len(_layer_name) == 3:
+            layer_name = _layer_name[0] + '[' + _layer_name[1] + ']'
+        elif len(_layer_name) == 2:
+            layer_name = _layer_name[0]
+
+        
+        if len(p[1].data.size()) != 1:
+        
+            cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
+            cond_vals = cond.attribute(self.test_data,target=self.test_target)
+            cond_vals = cond_vals.detach().numpy()
+            neuron_values = np.mean(cond_vals, axis=0)
+
+            visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
+            threshold = np.percentile(np.array(neuron_values), self.pruning_perc * 100)
+            prune_idx = np.argwhere(np.array(neuron_values) > threshold).flatten()
+        else:
+            prune_idx = []
+
+        return prune_idx
+        
   
     def apply_strategy(self):
         self.define_strategy()
@@ -100,7 +143,16 @@ class Pruning(BaseClass):
     def get_optimizer_model(self):
         return self.get_optimizer(), self.get_model()
 
-    def prune_model(self, optimizer, model):
+    def prune_model(self, optimizer, model, strategy):
+        self.strategy = strategy
         self.set_optimizer_model(optimizer, model)
         self.apply_strategy()
         return self.get_optimizer_model()
+
+
+
+def visualize_importances(neuron_no, importances, name='1'):
+    x_pos = (np.arange(neuron_no))
+    plt.figure(figsize=(12,6))
+    plt.bar(x_pos, importances, align='center')
+    plt.savefig("{}.png".format(name))

@@ -133,6 +133,7 @@ def test(mod):
 
 
 pruning = Pruning(percentage=0.1)
+pruning.set_test_data(next(iter(test_loader)))
 
 for epoch in range(1, n_epochs + 1):
   train(model, optimizer, epoch)
@@ -140,7 +141,7 @@ for epoch in range(1, n_epochs + 1):
 
   if epoch % args.prune_iter == 0:
     
-    optimizer, model = pruning.prune_model(optimizer, model)
+    optimizer, model = pruning.prune_model(optimizer, model, pruning.layer_conductance_pruning)
 
 
 
