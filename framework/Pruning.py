@@ -50,23 +50,40 @@ class Pruning(BaseClass):
   
     def apply_strategy(self):
         self.define_strategy()
+
+        # Create a copy of the neurons retained for each hidden layer weights, for example: [400, 50] and add another copy for the biases [400]
         self.neurons_retained = [val for val in self.neurons_retained for _ in (0, 1)]
 
+        # Convert parameters to list
         self.param_list = list(self.new_model.parameters())
 
+        # Iterate over all copy of neurons.
         for (i, neuron_idx) in enumerate(self.neurons_retained):
+            # Get all weights for a particular layer, including weights and biases.
             idx_weights = self.param_list[i]
+
+            # Condition check for all layers except the last 2. Last two layers do not prune number of neurons.
             if i < len(self.param_list) - 2:
                 print(neuron_idx)
+
+                # Set y as weights of all neurons to keep
                 y = idx_weights[neuron_idx]
+
+                # If the layer is not the first two layers (associated to input layers) and the layers are weights (weights have a shape of 2, biases have a shape of 1)
                 if i > 1 and len(idx_weights.shape)> 1:
+                    # Modify y in the second index to only keep the neurons in the previous layer.
                     y = y[:, self.neurons_retained[i-1]]
+
+            # If the layer is not the first 2 layers and is a weights layer then set the second index to neurons retained from previous layer.This condition only works for last 2 layers.
             elif i > 1 and len(idx_weights.shape) > 1:
                 y = idx_weights[:, self.neurons_retained[i-1]]
                 
+            # For all other layers set y as just all the weights. 
             else:
                 y = idx_weights
                 
+
+            # Set the weights data to y. editing the model parameters. 
             idx_weights.data = y
 
 
