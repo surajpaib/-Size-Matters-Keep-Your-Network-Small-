@@ -1,5 +1,6 @@
 from includes import *
 
+
 def input_validation(params):
     if not('network' in params):
         logging.error("Network Definition: network key missing")
@@ -15,8 +16,7 @@ def input_validation(params):
         logging.error("Not Enough Hidden Layers in the Definition")
         return False
 
-
-    for param in network_params.keys(): 
+    for param in network_params.keys():
         if (type(network_params[param]) == dict) and not('units' in network_params[param]):
             logging.error('Units Not Specified in the Input or Output Layers')
             return False
@@ -39,7 +39,7 @@ def get_activation_scheme(params):
                 activations_list.append(eval('F.'+activation_function))
                 continue
         activations_list.append(F.relu)
-        
+
     if 'activation' in params['output_layer']:
         activation_function = params['output_layer']['activation']
         print(activation_function)
@@ -63,7 +63,7 @@ def get_layer_type_scheme(params):
                 types_list.append(eval('nn.'+layer_type))
                 continue
         types_list.append(nn.Linear)
-        
+
     if 'type' in params['output_layer']:
         layer_type = params['output_layer']['type']
         if layer_type in dir(nn):
@@ -74,3 +74,42 @@ def get_layer_type_scheme(params):
         types_list.append(nn.Linear)
 
     return types_list
+
+
+def freq_dist(iterations, dist):
+    dists = ["equal", "incr", "decr"]
+    freq_lst = []
+    epochs = 100
+    if dist == dists[0]:
+        final_lst = [False] + \
+            ([True]+[False]*int((epochs/iterations)-1))*int(iterations)
+        final_lst.pop()
+        return(final_lst)
+
+    if iterations == 50:
+        exp_factor = 1.08005
+        const_factor = 1
+    elif iterations == 25:
+        exp_factor = 1.17755
+        const_factor = 1.5
+    elif iterations == 10:
+        exp_factor = 1.52268
+        const_factor = 3
+
+    for i in range(1, iterations+1):
+        increment = int(round((exp_factor**i) + i*const_factor))
+        freq_lst.append(increment)
+
+    comp_lst = range(1, epochs+1)
+    final_lst = []
+
+    for i in range(len(comp_lst)):
+        if comp_lst[i] in freq_lst:
+            final_lst.append(1)
+        else:
+            final_lst.append(0)
+
+    if dist == dists[2]:
+        final_lst = reversed(final_lst)
+
+    return(list(map(bool, final_lst)))
