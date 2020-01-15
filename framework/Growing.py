@@ -5,8 +5,8 @@ import torch.nn as nn
 import numpy as np
 
 class Growing(BaseClass):
-    def __init__(self):
-        pass
+    def __init__(self, percentage):
+        self.set_percentage(percentage)
 
     def set_model(self, model):
         self.prev_model = model
@@ -22,14 +22,14 @@ class Growing(BaseClass):
         self.set_model(model)
         self.set_optimizer(optim)
 
-    def set_percentage(self, pruning_perc):
-        pass
+    def set_percentage(self, growing_perc):
+        self.growing_perc = growing_perc
 
     def print_model_structure(self, model):
         for (layer, param) in enumerate(model.parameters()):
             print("Layer {} , Parameters: {}".format(layer, param.shape))
 
-    def define_strategy(self):
+    def define_strategy_random(self):
 
         #Number of numbers to add per layer, list of integres
         self.number_neurons_per_layer = []
@@ -37,6 +37,37 @@ class Growing(BaseClass):
         #Current strategy: add random number of neurons between 0 and 9.
         for p in self.new_model.parameters():
             self.number_neurons_per_layer.append(np.random.randint(10))
+
+    def define_strategy(self):
+
+        #Number of numbers to add per layer, list of integres
+        self.number_neurons_per_layer = []
+
+        meaned_l1_layer = []
+        neurons_per_layer = []
+
+        for p in [x for x in self.new_model.parameters()][:-2]: #skip output layer
+
+            if len(p.data.size()) != 1: #skip biases
+                neurons_per_layer.append(p.data.shape[0])
+                normed_weights = p.data.abs()
+                l1_norm_layer = torch.mean(normed_weights).item()
+                meaned_l1_layer.append(l1_norm_layer)
+
+        #dont take into account output layer
+        total_number_neurons = np.sum(neurons_per_layer)
+        total_l1 = np.sum(meaned_l1_layer)
+
+        print('Total number of neurons to divide: ',int(total_number_neurons*self.growing_perc))
+
+        add_per_layer = [int(round((x/total_l1)*total_number_neurons*self.growing_perc,0)) for x in meaned_l1_layer]
+
+        self.number_neurons_per_layer = add_per_layer
+
+        print('Neurons to add per layer')
+        print(self.number_neurons_per_layer)
+
+
 
     def apply_strategy(self):
         self.define_strategy()
@@ -75,9 +106,9 @@ class Growing(BaseClass):
             add_weights_2 = torch.zeros([current_num_nodes_2,number_new_neurons])
 
             #Randomize
-            nn.init.xavier_uniform_(add_weights_1, gain=nn.init.calculate_gain('relu'))
-            nn.init.xavier_uniform_(add_bias_1, gain=nn.init.calculate_gain('relu'))
-            nn.init.xavier_uniform_(add_weights_2, gain=nn.init.calculate_gain('relu'))
+            nn.init.uniform_(add_weights_1, a = layer_weights_1.data.min().item() , b = layer_weights_1.data.max().item() )
+            nn.init.uniform_(add_bias_1,  a = layer_bias_1.data.min().item() , b = layer_bias_1.data.max().item())
+            nn.init.uniform_(add_weights_2, a = layer_weights_2.data.min().item() , b = layer_weights_2.data.max().item() )
 
             #merge weights
             new_weights_1 = torch.cat([layer_weights_1,add_weights_1],dim=0) #add bottom row
