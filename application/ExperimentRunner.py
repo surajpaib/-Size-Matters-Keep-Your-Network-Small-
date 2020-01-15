@@ -8,6 +8,8 @@ import torchvision
 from train_utils import ReshapeTransform
 import logging
 
+import time
+
 import shutil
 
 logging.basicConfig(level=logging.INFO)
@@ -40,13 +42,17 @@ class Experiment:
     def save_tensorboard_summary(self, loss_dict):
         self.tensorboard_summary.add_scalar('Loss/train', loss_dict['train'], loss_dict['epoch'])
         self.tensorboard_summary.add_scalar('Loss/val', loss_dict['val'], loss_dict['epoch'])
-        self.tensorboard_summary.add_scalar('Accuracy/val', loss_dict['acc'])
+        self.tensorboard_summary.add_scalar('Accuracy/val', loss_dict['acc'], loss_dict['epoch'])
+        self.tensorboard_summary.add_scalar('Time/train', loss_dict['traint'], loss_dict['epoch'])
+        self.tensorboard_summary.add_scalar('Time/inference', loss_dict['traini'], loss_dict['epoch'])
+
 
     
     
     def train_epoch(self, epoch):
         trainLoss = 0.0
         self.network.train()
+        start_t = time.time()
         for batch_idx, (data, target) in enumerate(self.trainLoader):
             self.optimizer.zero_grad()
             output = self.network(data)
@@ -55,12 +61,15 @@ class Experiment:
             loss.backward()
             trainLoss += loss.item()
             self.optimizer.step()
+
+        traint = time.time() - start_t
         trainLoss /= len(self.trainLoader.dataset)
 
 
         testLoss = 0.0
         correct = 0.0
         self.network.eval()
+        start_i = time.time()
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(self.testLoader):
                 output = self.network(data)
@@ -69,10 +78,11 @@ class Experiment:
                 pred = output.data.max(1, keepdim=True)[1]
                 correct += pred.eq(target.data.view_as(pred)).sum()
                 acc = 100. * correct / len(self.testLoader.dataset)
+            traini = (time.time() - start_i)/len(self.testLoader.dataset)
             testLoss /= len(self.testLoader.dataset)
 
         logging.info("VALIDATION: \t Loss: {}, Accuracy : {}".format(testLoss, acc))        
-        self.save_tensorboard_summary({'train':trainLoss, 'val': testLoss, 'acc': acc, 'epoch': epoch})
+        self.save_tensorboard_summary({'train':trainLoss, 'val': testLoss, 'acc': acc, 'epoch': epoch, 'traint': traint, 'traini': traini})
 
         self.bestLoss = min(testLoss, self.bestLoss)
         self.is_best = (self.bestLoss == testLoss)
@@ -82,13 +92,15 @@ class Experiment:
                 'state_dict': self.network.state_dict(),
                 'best_acc1': self.bestLoss,
                 'optimizer' : self.optimizer.state_dict(),
+                'traint': traint,
+                'traini': traini
             })
 
 
 
 if __name__ == "__main__":
 
-    batch_size_train = 100
+    batch_size_train = 512
     batch_size_test = 1000
     learning_rate = 0.01
     n_epochs = 100
