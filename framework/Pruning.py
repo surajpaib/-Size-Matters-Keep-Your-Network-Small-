@@ -43,14 +43,16 @@ class Pruning(BaseClass):
         """
             Neurons retained should contain a list of neurons to be kept at each layer with hidden units.
         """
+        if self.strategy == self.layer_importance_pruning:
+            print(self.strategy())
+        else:
+            # Access model weights
+            self.neurons_retained = []
 
-        # Access model weights
-        self.neurons_retained = []
-
-        for p in self.new_model.named_parameters():
-            prune_idx = self.strategy(p)
-            if len(prune_idx) > 0:
-                self.neurons_retained.append(prune_idx)
+            for p in self.new_model.named_parameters():
+                prune_idx = self.strategy(p)
+                if len(prune_idx) > 0:
+                    self.neurons_retained.append(prune_idx)
 
 
     def l1_norm_pruning(self, p):
@@ -90,7 +92,27 @@ class Pruning(BaseClass):
 
         return prune_idx
         
-  
+    
+    def layer_importance_pruning(self):
+        layer_importance_dict = {}
+
+        for p in self.new_model.named_parameters():
+            _layer_name = p[0].split(".")
+            if len(_layer_name) == 3:
+                layer_name = _layer_name[0] + '[' + _layer_name[1] + ']'
+            elif len(_layer_name) == 2:
+                layer_name = _layer_name[0]
+
+            if len(p[1].data.size()) != 1:
+                cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
+                cond_vals = cond.attribute(self.test_data,target=self.test_target)
+                cond_vals = cond_vals.detach().numpy()
+
+                layer_importance_val = np.mean(cond_vals)
+                layer_importance_dict[layer_name] = layer_importance_val
+        
+        return layer_importance_dict
+
     def apply_strategy(self):
         self.define_strategy()
 
