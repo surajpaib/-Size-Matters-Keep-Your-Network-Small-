@@ -43,25 +43,26 @@ class Pruning(BaseClass):
         """
             Neurons retained should contain a list of neurons to be kept at each layer with hidden units.
         """
-        if self.strategy == self.layer_importance_pruning:
-            print(self.strategy())
-        else:
-            # Access model weights
-            self.neurons_retained = []
+        self.neurons_retained = []
+        layer_importances = self.layer_importance()[:-1]
+        layer_importances = np.array([1/v for v in layer_importances])
+        layer_importances = list(np.round(layer_importances/ np.sum(layer_importances) * self.pruning_perc * 100)) + [100]
 
-            for p in self.new_model.named_parameters():
-                prune_idx = self.strategy(p)
-                if len(prune_idx) > 0:
-                    self.neurons_retained.append(prune_idx)
+        layer_importances = [val for val in layer_importances for _ in (0, 1)]
+
+        for idx, p in enumerate(self.new_model.named_parameters()):
+            prune_idx = self.strategy(p, layer_importances[idx])
+            if len(prune_idx) > 0:
+                self.neurons_retained.append(prune_idx)
 
 
-    def l1_norm_pruning(self, p):
+    def l1_norm_pruning(self, p, percentage):
         p = p[1]
         print("Size:", len(p.data.size()))
         if len(p.data.size()) != 1:
             normed_weights = p.data.abs()
             l1_norm_layer = [torch.sum(normed_weights[neuron_idx, :]).item() for neuron_idx in range(normed_weights.shape[0])]
-            threshold = np.percentile(np.array(l1_norm_layer), self.pruning_perc * 100)
+            threshold = np.percentile(np.array(l1_norm_layer), percentage)
             prune_idx = np.argwhere(np.array(l1_norm_layer) > threshold).flatten()
         else:
             prune_idx = []
@@ -69,7 +70,7 @@ class Pruning(BaseClass):
         return prune_idx
             
 
-    def layer_conductance_pruning(self, p):
+    def layer_conductance_pruning(self, p, percentage):
         _layer_name = p[0].split(".")
         if len(_layer_name) == 3:
             layer_name = _layer_name[0] + '[' + _layer_name[1] + ']'
@@ -83,9 +84,8 @@ class Pruning(BaseClass):
             cond_vals = cond.attribute(self.test_data,target=self.test_target)
             cond_vals = cond_vals.detach().numpy()
             neuron_values = np.mean(cond_vals, axis=0)
-
             visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
-            threshold = np.percentile(np.array(neuron_values), self.pruning_perc * 100)
+            threshold = np.percentile(np.array(neuron_values), percentage)
             prune_idx = np.argwhere(np.array(neuron_values) > threshold).flatten()
         else:
             prune_idx = []
@@ -93,10 +93,11 @@ class Pruning(BaseClass):
         return prune_idx
         
     
-    def layer_importance_pruning(self):
-        layer_importance_dict = {}
+    def layer_importance(self):
+        layer_importance_list = []
 
         for p in self.new_model.named_parameters():
+
             _layer_name = p[0].split(".")
             if len(_layer_name) == 3:
                 layer_name = _layer_name[0] + '[' + _layer_name[1] + ']'
@@ -109,9 +110,9 @@ class Pruning(BaseClass):
                 cond_vals = cond_vals.detach().numpy()
 
                 layer_importance_val = np.mean(cond_vals)
-                layer_importance_dict[layer_name] = layer_importance_val
+                layer_importance_list.append(layer_importance_val)
         
-        return layer_importance_dict
+        return layer_importance_list
 
     def apply_strategy(self):
         self.define_strategy()
