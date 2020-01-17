@@ -46,7 +46,7 @@ class Pruning(BaseClass):
         self.neurons_retained = []
         layer_importances = self.layer_importance()[:-1]
         layer_importances = np.array([1/v for v in layer_importances])
-        layer_importances = list(np.round(layer_importances/ np.sum(layer_importances) * self.pruning_perc * 100)) + [100]
+        layer_importances = list(np.round(layer_importances/ np.sum(layer_importances) * self.pruning_perc * 100)) + [0]
 
         layer_importances = [val for val in layer_importances for _ in (0, 1)]
 
@@ -84,7 +84,8 @@ class Pruning(BaseClass):
             cond_vals = cond.attribute(self.test_data,target=self.test_target)
             cond_vals = cond_vals.detach().numpy()
             neuron_values = np.mean(cond_vals, axis=0)
-            visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
+            # Do we really need visualization?
+            # visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
             threshold = np.percentile(np.array(neuron_values), percentage)
             prune_idx = np.argwhere(np.array(neuron_values) > threshold).flatten()
         else:

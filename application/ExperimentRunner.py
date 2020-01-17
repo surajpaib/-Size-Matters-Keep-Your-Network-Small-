@@ -16,14 +16,16 @@ import shutil
 logging.basicConfig(level=logging.INFO)
 
 class Experiment:
-    def __init__(self):
+    def __init__(self, device):
         self.is_best = True
+        self.device = device
         self.bestLoss = 999999
         self.tensorboard_summary = SummaryWriter()
 
 
     def set_network(self, network):
         self.network = network
+        self.network = self.network.to(self.device)
 
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
@@ -47,12 +49,48 @@ class Experiment:
         self.tensorboard_summary.add_scalar('Accuracy/val', loss_dict['acc'], loss_dict['epoch'])
         self.tensorboard_summary.add_scalar('Time/train', loss_dict['traint'], loss_dict['epoch'])
         self.tensorboard_summary.add_scalar('Time/inference', loss_dict['traini'], loss_dict['epoch'])
+        # self.tensorboard_summary.add_scalar('', loss_dict['traini'], loss_dict['epoch'])
 
-    def get_iteration_distribution(self):
+    def get_iteration_distribution(self, iterations, dist):
         """
         Dummy function for iteration distribution
         """
-        return [*[False, True]*50]
+        dists = ["equal", "incr", "decr"]
+        freq_lst = []
+        epochs = 100
+        if dist == dists[0]:
+            final_lst = [False] + \
+                ([True]+[False]*int((epochs/iterations)-1))*int(iterations)
+            final_lst.pop()
+            return(final_lst)
+
+        if iterations == 50:
+            exp_factor = 1.08005
+            const_factor = 1
+        elif iterations == 25:
+            exp_factor = 1.17755
+            const_factor = 1.5
+        elif iterations == 10:
+            exp_factor = 1.52268
+            const_factor = 3
+
+        for i in range(1, iterations+1):
+            increment = int(round((exp_factor**i) + i*const_factor))
+            freq_lst.append(increment)
+
+        comp_lst = range(1, epochs+1)
+        final_lst = []
+
+        for i in range(len(comp_lst)):
+            if comp_lst[i] in freq_lst:
+                final_lst.append(1)
+            else:
+                final_lst.append(0)
+
+        if dist == dists[2]:
+            final_lst = reversed(final_lst)
+
+        return(list(map(bool, final_lst)))
     
     def train_epoch(self, epoch):
         trainLoss = 0.0
@@ -60,6 +98,7 @@ class Experiment:
         self.network.train()
         start_t = time.time()
         for batch_idx, (data, target) in enumerate(self.trainLoader):
+            data, target = data.to(self.device), target.to(self.device)
             self.optimizer.zero_grad()
             output = self.network(data)
             loss = self.loss(output, target)
@@ -81,6 +120,7 @@ class Experiment:
         start_i = time.time()
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(self.testLoader):
+                data, target = data.to(self.device), target.to(self.device)
                 output = self.network(data)
                 loss = self.loss(output, target)
                 testLoss += loss.item()
@@ -111,11 +151,18 @@ if __name__ == "__main__":
 
     batch_size_train = 100
     learning_rate = 0.01
-
+    seed = 42
     batch_size_test = 1000
     n_epochs = 100
 
-    experiment = Experiment()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+    else:
+        torch.manual_seed(seed)
+
+
+    experiment = Experiment(device)
     pruning = Pruning(percentage=0.0582)
 
     model_dict = {
@@ -172,11 +219,11 @@ if __name__ == "__main__":
     experiment.set_loss(torch.nn.CrossEntropyLoss())
     experiment.set_optimizer(torch.optim.SGD(model.parameters(), lr=learning_rate))
 
-    pruning.set_test_data(next(iter(test_loader)))
 
-    ilist = experiment.get_iteration_distribution()
+    iter_list = experiment.get_iteration_distribution(50, "equal")
     for idx, epoch in enumerate(range(n_epochs)):
-        if ilist[idx]:
+        if iter_list[idx]:
+            pruning.set_test_data(next(iter(test_loader)))
             optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, pruning.layer_conductance_pruning)
             experiment.set_optimizer(optimizer)
             experiment.set_network(model)
