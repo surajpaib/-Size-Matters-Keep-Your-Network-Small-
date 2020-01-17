@@ -37,8 +37,8 @@ class Pruning(BaseClass):
 
     def print_model_structure(self, model):
         for (layer, param) in enumerate(model.parameters()):
-            print("Layer {} , Parameters: {}".format(layer, param.shape))    
-                    
+            print("Layer {} , Parameters: {}".format(layer, param.shape))
+
 
     def define_strategy(self):
         """
@@ -69,7 +69,7 @@ class Pruning(BaseClass):
             prune_idx = []
 
         return prune_idx
-            
+
 
     def layer_conductance_pruning(self, p, percentage):
         _layer_name = p[0].split(".")
@@ -78,12 +78,12 @@ class Pruning(BaseClass):
         elif len(_layer_name) == 2:
             layer_name = _layer_name[0]
 
-        
+
         if len(p[1].data.size()) != 1:
-        
+
             cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
             cond_vals = cond.attribute(self.test_data,target=self.test_target)
-            cond_vals = cond_vals.detach().numpy()
+            cond_vals = cond_vals.cpu().detach().numpy()
             neuron_values = np.mean(cond_vals, axis=0)
             # Do we really need visualization?
             # visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
@@ -93,8 +93,8 @@ class Pruning(BaseClass):
             prune_idx = []
 
         return prune_idx
-        
-    
+
+
     def layer_importance(self):
         layer_importance_list = []
 
@@ -109,11 +109,11 @@ class Pruning(BaseClass):
             if len(p[1].data.size()) != 1:
                 cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
                 cond_vals = cond.attribute(self.test_data,target=self.test_target)
-                cond_vals = np.abs(cond_vals.detach().numpy())
+                cond_vals = np.abs(cond_vals.cpu().detach().numpy())
 
                 layer_importance_val = np.mean(cond_vals)
                 layer_importance_list.append(layer_importance_val)
-        
+
         return layer_importance_list
 
     def apply_strategy(self):
@@ -145,13 +145,13 @@ class Pruning(BaseClass):
             # If the layer is not the first 2 layers and is a weights layer then set the second index to neurons retained from previous layer.This condition only works for last 2 layers.
             elif i > 1 and len(idx_weights.shape) > 1:
                 y = idx_weights[:, self.neurons_retained[i-1]]
-                
-            # For all other layers set y as just all the weights. 
+
+            # For all other layers set y as just all the weights.
             else:
                 y = idx_weights
-                
 
-            # Set the weights data to y. editing the model parameters. 
+
+            # Set the weights data to y. editing the model parameters.
             idx_weights.data = y
 
 
