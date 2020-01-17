@@ -111,7 +111,8 @@ class Experiment:
 
         tacc = 100. * correct / len(self.trainLoader.dataset)
         traint = time.time() - start_t
-        trainLoss /= len(self.trainLoader.dataset)
+        trainLoss = trainLoss * self.trainLoader.batch_size / len(self.trainLoader.dataset)
+
 
 
         testLoss = 0.0
@@ -128,7 +129,7 @@ class Experiment:
                 correct += pred.eq(target.data.view_as(pred)).sum()
             acc = 100. * correct / len(self.testLoader.dataset)
             traini = (time.time() - start_i)/len(self.testLoader.dataset)
-            testLoss /= len(self.testLoader.dataset)
+            testLoss = testLoss * self.testLoader.batch_size /len(self.testLoader.dataset)
 
         logging.info("VALIDATION: \t Loss: {}, Accuracy : {}".format(testLoss, acc))        
         self.save_tensorboard_summary({'train':trainLoss, 'val': testLoss, 'acc': acc, 'epoch': epoch, 'traint': traint, 'traini': traini, 'tacc':tacc})

@@ -108,7 +108,7 @@ class Pruning(BaseClass):
             if len(p[1].data.size()) != 1:
                 cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
                 cond_vals = cond.attribute(self.test_data,target=self.test_target)
-                cond_vals = cond_vals.detach().numpy()
+                cond_vals = np.abs(cond_vals.detach().numpy())
 
                 layer_importance_val = np.mean(cond_vals)
                 layer_importance_list.append(layer_importance_val)
