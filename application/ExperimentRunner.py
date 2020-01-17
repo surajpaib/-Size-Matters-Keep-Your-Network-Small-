@@ -13,7 +13,6 @@ from NetworkClass import Network
 from Pruning import Pruning
 from train_utils import ReshapeTransform
 
-logging.basicConfig(level=logging.INFO)
 
 class Experiment:
     def __init__(self, device):
@@ -105,7 +104,7 @@ class Experiment:
             self.optimizer.zero_grad()
             output = self.network(data)
             loss = self.loss(output, target)
-            logging.info("Batch : {} \t Loss: {}".format(batch_idx, loss.item()))
+            # logging.info("Batch : {} \t Loss: {}".format(batch_idx, loss.item()))
             loss.backward()
             trainLoss += loss.item()
             pred = output.data.max(1, keepdim=True)[1]
@@ -134,7 +133,7 @@ class Experiment:
             traini = (time.time() - start_i)/len(self.testLoader.dataset)
             testLoss = testLoss * self.testLoader.batch_size /len(self.testLoader.dataset)
 
-        logging.info("VALIDATION: \t Loss: {}, Accuracy : {}".format(testLoss, acc))        
+        # logging.info("VALIDATION: \t Loss: {}, Accuracy : {}".format(testLoss, acc))        
         self.save_tensorboard_summary({'train':trainLoss, 'val': testLoss, 'acc': acc, 'epoch': epoch, 'traint': traint, 'traini': traini, 'tacc':tacc})
 
         self.bestLoss = min(testLoss, self.bestLoss)
@@ -153,12 +152,15 @@ class Experiment:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.CRITICAL)
+
     params_dict = {
         "batch_size_train": 100,
         "learning_rate": 0.01,
         "batch_size_test": 1000,
         "n_epochs": 100,
         "type": "Pruning",
+        "method": "l1_norm_pruning",
         "percentage": 0.0582,
         "iterations": 50,
         "distribution": "equal"
@@ -191,22 +193,24 @@ if __name__ == "__main__":
                 
                 },
             'hidden_layer': [{
-                    "units": 168, 
+                    "units": 100, 
                     "activation": "relu",
                     "type": "Linear"
-                }, 
+                }
+                , 
                 {
-                    "units": 168, 
+                    "units": 100, 
                     "activation": "relu",
                     "type": "Linear"
 
                 }, 
                 {
-                    "units": 168, 
+                    "units": 100, 
                     "activation": "relu",
                     "type": "Linear"
 
-                }],
+                }
+                ],
             'output_layer': {
                 "units": 10,
                 "activation": "softmax",
@@ -233,7 +237,6 @@ if __name__ == "__main__":
 
     kf = KFold(n_splits=5, shuffle=True, random_state=seed)
     for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
-        print("FOLD: {}".format(i_fold+1))
         # new fold - network from scratch
         model = Network(model_dict) 
         params_dict["fold"] = i_fold+1
@@ -254,7 +257,7 @@ if __name__ == "__main__":
         for idx, epoch in enumerate(range(params_dict["n_epochs"])):
             if iter_list[idx]:
                 pruning.set_test_data(next(iter(test_loader)))
-                optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, pruning.layer_conductance_pruning)
+                optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, eval('pruning.{}'.format(params_dict["method"])))
                 experiment.set_optimizer(optimizer)
                 experiment.set_network(model)
                 

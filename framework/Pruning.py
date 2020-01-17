@@ -16,6 +16,12 @@ class Pruning(BaseClass):
         self.new_model = copy.deepcopy(model)
         print("Set Model for Pruning: \n")
         self.print_model_structure(self.prev_model)
+        self.total_neurons = 0
+        for idx, p in enumerate(self.new_model.named_parameters()):
+            if len(p[1].data.size()) == 1 and p[0].split(".")[0] != 'output_layer':
+                self.total_neurons += p[1].data.size()[0]
+
+        print("Total Neurons in Network: ", self.total_neurons)
 
 
     def set_test_data(self, data):
@@ -34,7 +40,7 @@ class Pruning(BaseClass):
 
     def set_percentage(self, pruning_perc):
         self.pruning_perc = pruning_perc
-
+   
     def print_model_structure(self, model):
         for (layer, param) in enumerate(model.parameters()):
             print("Layer {} , Parameters: {}".format(layer, param.shape))
@@ -47,12 +53,16 @@ class Pruning(BaseClass):
         self.neurons_retained = []
         layer_importances = self.layer_importance()[:-1]
         layer_importances = np.array([1/v for v in layer_importances])
-        layer_importances = list(np.round(layer_importances/ np.sum(layer_importances) * self.pruning_perc * 100)) + [0]
+        layer_percentages = list(layer_importances/ np.sum(layer_importances) * self.pruning_perc * 100) + [0]
 
-        layer_importances = [val for val in layer_importances for _ in (0, 1)]
+        layer_percentages = [val for val in layer_percentages for _ in (0, 1)]
+        print(layer_percentages)
 
         for idx, p in enumerate(self.new_model.named_parameters()):
-            prune_idx = self.strategy(p, layer_importances[idx])
+
+            percentage_to_prune_at_layer = (layer_percentages[idx] * self.total_neurons)/p[1].data.size()[0]
+            print(percentage_to_prune_at_layer)
+            prune_idx = self.strategy(p, percentage_to_prune_at_layer)
             if len(prune_idx) > 0:
                 self.neurons_retained.append(prune_idx)
 
@@ -63,8 +73,11 @@ class Pruning(BaseClass):
         if len(p.data.size()) != 1:
             normed_weights = p.data.abs()
             l1_norm_layer = [torch.sum(normed_weights[neuron_idx, :]).item() for neuron_idx in range(normed_weights.shape[0])]
-            threshold = np.percentile(np.array(l1_norm_layer), percentage)
-            prune_idx = np.argwhere(np.array(l1_norm_layer) > threshold).flatten()
+            threshold = np.percentile(np.array(l1_norm_layer), percentage, interpolation='nearest')
+            print("Threshold Value", threshold)
+
+            prune_idx = np.argwhere(np.array(l1_norm_layer) >= threshold).flatten()
+            print("Neurons retained: ", len(prune_idx))
         else:
             prune_idx = []
 
