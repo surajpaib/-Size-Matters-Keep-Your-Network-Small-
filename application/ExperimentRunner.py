@@ -1,17 +1,17 @@
 import sys
+import logging
+import time
+import shutil
 
 import torch
+import torchvision
 from torch.utils.tensorboard import SummaryWriter
+from sklearn.model_selection import KFold
+
 sys.path.append('framework')
 from NetworkClass import Network
 from Pruning import Pruning
-import torchvision
 from train_utils import ReshapeTransform
-import logging
-
-import time
-
-import shutil
 
 logging.basicConfig(level=logging.INFO)
 
@@ -196,39 +196,49 @@ if __name__ == "__main__":
         }
     }
 
-    model = Network(model_dict)
-    experiment.set_network(model)
-    train_loader = torch.utils.data.DataLoader(
-    torchvision.datasets.FashionMNIST('../data/', train=True, download=True,
+
+    train_dataset = torchvision.datasets.FashionMNIST('../data/', train=True, download=True,
         transform=torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
         ReshapeTransform((-1,))
-        ])),
-    batch_size=batch_size_train, shuffle=True)
+        ]))
 
-
-    test_loader = torch.utils.data.DataLoader(
-    torchvision.datasets.FashionMNIST('../data/', train=False, download=True,
+    test_dataset  = torchvision.datasets.FashionMNIST('../data/', train=False, download=True,
         transform=torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
         ReshapeTransform((-1,))
-        ])),
-    batch_size=batch_size_test, shuffle=True)
+        ]))
 
-    experiment.set_loaders(train_loader, test_loader)
-    experiment.set_loss(torch.nn.CrossEntropyLoss())
-    experiment.set_optimizer(torch.optim.SGD(model.parameters(), lr=learning_rate))
+    dataset = torch.utils.data.ConcatDataset([train_dataset, test_dataset])
 
+    kf = KFold(n_splits=5, shuffle=True)
+    for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
+        print("FOLD: {}".format(i_fold+1))
+        # new fold - network from scratch
+        model = Network(model_dict) 
+        
+        # set the dataloaders for the fold
+        train = torch.utils.data.Subset(dataset, train_index)
+        test = torch.utils.data.Subset(dataset, test_index)
+        train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size_train, shuffle=True)
+        test_loader = torch.utils.data.DataLoader(test, batch_size=batch_size_test, shuffle=True)
+    
+        # set up the experiment
+        experiment.set_network(model)
+        experiment.set_loaders(train_loader, test_loader)
+        experiment.set_loss(torch.nn.CrossEntropyLoss())
+        experiment.set_optimizer(torch.optim.SGD(model.parameters(), lr=learning_rate))
 
-    iter_list = experiment.get_iteration_distribution(50, "equal")
-    for idx, epoch in enumerate(range(n_epochs)):
-        if iter_list[idx]:
-            pruning.set_test_data(next(iter(test_loader)))
-            optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, pruning.layer_conductance_pruning)
-            experiment.set_optimizer(optimizer)
-            experiment.set_network(model)
-            
-        experiment.train_epoch(epoch)
+        iter_list = experiment.get_iteration_distribution(50, "equal")
+        # training loop
+        for idx, epoch in enumerate(range(n_epochs)):
+            if iter_list[idx]:
+                pruning.set_test_data(next(iter(test_loader)))
+                optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, pruning.layer_conductance_pruning)
+                experiment.set_optimizer(optimizer)
+                experiment.set_network(model)
+                
+            experiment.train_epoch(epoch)
         
 
 
