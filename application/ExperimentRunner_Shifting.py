@@ -259,8 +259,13 @@ if __name__ == "__main__":
             if iter_list[idx]:
                 pruning.set_test_data(next(iter(test_loader)))
                 optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, pruning.l1_norm_growing)
+
+                experiment.set_optimizer(optimizer)
+                experiment.set_network(model)
+
                 growing.set_test_data(next(iter(test_loader)))
                 optimizer, model = growing.grow_model(experiment.optimizer, experiment.network, growing.l1_norm_growing)
+
                 experiment.set_optimizer(optimizer)
                 experiment.set_network(model)
 
