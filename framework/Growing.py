@@ -17,8 +17,9 @@ class Growing(BaseClass):
         self.print_model_structure(self.prev_model)
 
     def set_test_data(self, data):
-        self.test_data = data[0]
-        self.test_target = data[1]
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.test_data = data[0].to(device)
+        self.test_target = data[1].to(device)
 
     def set_optimizer(self, optim):
         self.prev_optimizer = optim

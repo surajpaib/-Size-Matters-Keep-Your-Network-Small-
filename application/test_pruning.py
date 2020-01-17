@@ -135,7 +135,7 @@ def test(mod):
 
 
 pruning = Pruning(percentage=0.1)
-pruning.set_test_data(next(iter(test_loader)))
+pruning.set_test_data(next(iter(test_loader)).to(device))
 
 for epoch in range(1, n_epochs + 1):
   train(model, optimizer, epoch)
