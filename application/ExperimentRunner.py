@@ -37,6 +37,9 @@ class Experiment:
     def set_loss(self, loss):
         self.loss = loss
 
+    def set_metadata(self, params_dict):
+        self.params_dict = params_dict
+
     def save_weights(self, state, filename='./checkpoint.pth.tar'):
         torch.save(state, filename)
         if self.is_best:
@@ -49,7 +52,7 @@ class Experiment:
         self.tensorboard_summary.add_scalar('Accuracy/val', loss_dict['acc'], loss_dict['epoch'])
         self.tensorboard_summary.add_scalar('Time/train', loss_dict['traint'], loss_dict['epoch'])
         self.tensorboard_summary.add_scalar('Time/inference', loss_dict['traini'], loss_dict['epoch'])
-        # self.tensorboard_summary.add_scalar('', loss_dict['traini'], loss_dict['epoch'])
+        self.tensorboard_summary.add_text('params', str(self.params_dict), loss_dict['epoch'])
 
     def get_iteration_distribution(self, iterations, dist):
         """
@@ -143,18 +146,28 @@ class Experiment:
                 'best_acc1': self.bestLoss,
                 'optimizer' : self.optimizer.state_dict(),
                 'traint': traint,
-                'traini': traini
+                'traini': traini,
+                'params': self.params_dict
             })
 
 
 
 if __name__ == "__main__":
-
-    batch_size_train = 100
-    learning_rate = 0.01
+    params_dict = {
+        "batch_size_train": 100,
+        "learning_rate": 0.01,
+        "batch_size_test": 1000,
+        "n_epochs": 100,
+        "type": "Pruning",
+        "percentage": 0.0582,
+        "iterations": 50,
+        "distribution": "equal"
+    }
+    # batch_size_train = 100
+    # learning_rate = 0.01
     seed = 42
-    batch_size_test = 1000
-    n_epochs = 100
+    # batch_size_test = 1000
+    # n_epochs = 100
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if torch.cuda.is_available():
@@ -164,7 +177,12 @@ if __name__ == "__main__":
 
 
     experiment = Experiment(device)
-    pruning = Pruning(percentage=0.0582)
+
+    if params_dict["type"] == "Pruning":
+        pruning = Pruning(percentage=params_dict["percentage"])
+    elif params_dict["type"] == "Growing":
+        growing = Growing(percentage=params_dict["percentage"])
+
 
     model_dict = {
         "network":{
@@ -197,6 +215,7 @@ if __name__ == "__main__":
         }
     }
 
+    params_dict["model"] = model_dict
 
     train_dataset = torchvision.datasets.FashionMNIST('../data/', train=True, download=True,
         transform=torchvision.transforms.Compose([
@@ -217,22 +236,22 @@ if __name__ == "__main__":
         print("FOLD: {}".format(i_fold+1))
         # new fold - network from scratch
         model = Network(model_dict) 
-        
+        params_dict["fold"] = i_fold+1
         # set the dataloaders for the fold
         train = torch.utils.data.Subset(dataset, train_index)
         test = torch.utils.data.Subset(dataset, test_index)
-        train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size_train, shuffle=True)
-        test_loader = torch.utils.data.DataLoader(test, batch_size=batch_size_test, shuffle=True)
+        train_loader = torch.utils.data.DataLoader(train, batch_size=params_dict["batch_size_train"], shuffle=True)
+        test_loader = torch.utils.data.DataLoader(test, batch_size=params_dict["batch_size_test"], shuffle=True)
     
         # set up the experiment
         experiment.set_network(model)
         experiment.set_loaders(train_loader, test_loader)
         experiment.set_loss(torch.nn.CrossEntropyLoss())
-        experiment.set_optimizer(torch.optim.SGD(model.parameters(), lr=learning_rate))
-
-        iter_list = experiment.get_iteration_distribution(50, "equal")
+        experiment.set_optimizer(torch.optim.SGD(model.parameters(), lr=params_dict["learning_rate"]))
+        experiment.set_metadata(params_dict)
+        iter_list = experiment.get_iteration_distribution(params_dict["iterations"], params_dict["distribution"])
         # training loop
-        for idx, epoch in enumerate(range(n_epochs)):
+        for idx, epoch in enumerate(range(params_dict["n_epochs"])):
             if iter_list[idx]:
                 pruning.set_test_data(next(iter(test_loader)))
                 optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, pruning.layer_conductance_pruning)
