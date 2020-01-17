@@ -97,7 +97,7 @@ class Growing(BaseClass):
 
                 cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
                 cond_vals = cond.attribute(self.test_data,target=self.test_target)
-                cond_vals = cond_vals.detach().numpy()
+                cond_vals = cond_vals.cpu().detach().numpy()
                 layer_value = np.mean(np.absolute(cond_vals))
                 meaned_cond_layer.append(layer_value)
 
@@ -120,6 +120,8 @@ class Growing(BaseClass):
 
     def apply_strategy(self):
         self.define_strategy()
+
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         #Double the list because it passes for both weights and bias
         #list with number of neurons to add per layer
@@ -154,6 +156,10 @@ class Growing(BaseClass):
             add_bias_1 = torch.zeros([1,number_new_neurons])
             add_weights_2 = torch.zeros([current_num_nodes_2,number_new_neurons])
 
+            add_weights_1 = add_weights_1.to(device)
+            add_bias_1 = add_bias_1.to(device)
+            add_weights_2 = add_weights_2.to(device)
+
             #Randomize
             nn.init.uniform_(add_weights_1, a = layer_weights_1.data.min().item() , b = layer_weights_1.data.max().item())
             nn.init.uniform_(add_bias_1,  a = layer_bias_1.data.min().item() , b = layer_bias_1.data.max().item())
@@ -168,6 +174,7 @@ class Growing(BaseClass):
             layer_weights_1.data = new_weights_1
             layer_weights_2.data = new_weights_2
             layer_bias_1.data = new_bias_1
+
 
     #copy pasta from pruning
     def get_model(self):
