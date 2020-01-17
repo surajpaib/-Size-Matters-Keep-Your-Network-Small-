@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
     dataset = torch.utils.data.ConcatDataset([train_dataset, test_dataset])
 
-    kf = KFold(n_splits=5, shuffle=True)
+    kf = KFold(n_splits=5, shuffle=True, random_state=seed)
     for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
         print("FOLD: {}".format(i_fold+1))
         # new fold - network from scratch
