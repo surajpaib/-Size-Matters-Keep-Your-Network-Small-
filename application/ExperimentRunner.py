@@ -12,8 +12,10 @@ from torch.utils.tensorboard import SummaryWriter
 from sklearn.model_selection import KFold
 
 sys.path.append('framework')
+
 from NetworkClass import Network
 from Pruning import Pruning
+from Growing import Growing
 from train_utils import ReshapeTransform
 
 def randomString(stringLength=10):
@@ -101,7 +103,7 @@ class Experiment:
             final_lst = reversed(final_lst)
 
         return(list(map(bool, final_lst)))
-    
+
     def train_epoch(self, epoch):
         self.trainLoss = 0.0
         correct = 0.0
@@ -141,7 +143,7 @@ class Experiment:
             self.traini = (time.time() - start_i)/len(self.testLoader.dataset)
             self.testLoss = self.testLoss * self.testLoader.batch_size /len(self.testLoader.dataset)
 
-        # logging.info("VALIDATION: \t Loss: {}, Accuracy : {}".format(testLoss, acc))        
+        # logging.info("VALIDATION: \t Loss: {}, Accuracy : {}".format(testLoss, acc))
         self.save_tensorboard_summary({'train':self.trainLoss, 'val': self.testLoss, 'acc': self.acc, 'epoch': epoch, 'traint': self.traint, 'traini': self.traini, 'tacc':self.tacc})
 
         self.bestLoss = min(self.testLoss, self.bestLoss)
@@ -162,11 +164,12 @@ if __name__ == "__main__":
         "learning_rate": 0.01,
         "batch_size_test": 1000,
         "n_epochs": 100,
-        "type": "Pruning",
-        "method": "layer_conductance_pruning",
+        "type": "Shifting", # Pruning / Growing / Shifting
+        "method": "layer_conductance", # layer_conductance / l1_norm
+        "method2": "layer_conductance", # none / layer_conductance / l1_norm
         "percentage": 0.0582,
         "iterations": 50,
-        "distribution": "equal"
+        "distribution": "equal" #"equal", "incr", "decr"
     }
     # batch_size_train = 100
     # learning_rate = 0.01
@@ -188,28 +191,31 @@ if __name__ == "__main__":
         pruning = Pruning(percentage=params_dict["percentage"])
     elif params_dict["type"] == "Growing":
         growing = Growing(percentage=params_dict["percentage"])
+    elif params_dict["type"] == "Shifting":
+        growing = Growing(percentage=params_dict["percentage"])
+        pruning = Pruning(percentage=params_dict["percentage"])
 
 
     model_dict = {
         "network":{
             'input_layer': {
                 "units": 784,
-                
+
                 },
             'hidden_layer': [{
-                    "units": 168, 
+                    "units": 168,
                     "activation": "relu",
                     "type": "Linear"
                 }
-                , 
+                ,
                 {
-                    "units": 168, 
+                    "units": 168,
                     "activation": "relu",
                     "type": "Linear"
 
-                }, 
+                },
                 {
-                    "units": 168, 
+                    "units": 168,
                     "activation": "relu",
                     "type": "Linear"
 
@@ -242,14 +248,14 @@ if __name__ == "__main__":
     kf = KFold(n_splits=5, shuffle=True, random_state=seed)
     for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
         # new fold - network from scratch
-        model = Network(model_dict) 
+        model = Network(model_dict)
         params_dict["fold"] = i_fold+1
         # set the dataloaders for the fold
         train = torch.utils.data.Subset(dataset, train_index)
         test = torch.utils.data.Subset(dataset, test_index)
         train_loader = torch.utils.data.DataLoader(train, batch_size=params_dict["batch_size_train"], shuffle=True)
         test_loader = torch.utils.data.DataLoader(test, batch_size=params_dict["batch_size_test"], shuffle=True)
-    
+
         # set up the experiment
         experiment.set_network(model)
         experiment.set_loaders(train_loader, test_loader)
@@ -260,11 +266,33 @@ if __name__ == "__main__":
         # training loop
         for idx, epoch in enumerate(range(params_dict["n_epochs"])):
             if iter_list[idx]:
-                pruning.set_test_data(next(iter(test_loader)))
-                optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, eval('pruning.{}'.format(params_dict["method"])))
+
+                _type = params_dict['type'].lower()
+                _type_stam = _type[:-3]
+                _method_add = _type_stam + 'ing'
+                _method = params_dict['method']+'_'+_method_add
+
+                if _type_stam[-1] == 'n':
+                    _type_stam += 'e'
+
+                if _type == 'shifting':
+                    _type = 'pruning'
+                    _type_stam = 'prune'
+                    _method = params_dict['method']+'_pruning'
+
+                eval(_type).set_test_data(next(iter(test_loader)))
+                optimizer, model = eval(_type+'.'+_type_stam+'_model')(experiment.optimizer, experiment.network, eval(_type+'.'+_method))
                 experiment.set_optimizer(optimizer)
                 experiment.set_network(model)
-                
+
+                if params_dict['type'] == "Shifting" and params_dict['method2'] != "none":
+                    #Growing after the pruning
+                    _method2 = params_dict['method2']+'_growing'
+                    growing.set_test_data(next(iter(test_loader)))
+                    optimizer, model = growing.grow_model(experiment.optimizer, experiment.network, eval('growing.'+_method2))
+                    experiment.set_optimizer(optimizer)
+                    experiment.set_network(model)
+
                 experiment.save_weights({
                         'epoch': epoch,
                         'state_dict': experiment.network.state_dict(),
@@ -276,12 +304,6 @@ if __name__ == "__main__":
                         'traint': experiment.traint,
                         'traini': experiment.traini,
                         'params': experiment.params_dict
-                    }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, params_dict["method"]))
-                
+                    }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
+
             experiment.train_epoch(epoch)
-        
-
-
-
-    
-
