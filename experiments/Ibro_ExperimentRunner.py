@@ -168,7 +168,7 @@ if __name__ == "__main__":
                 "learning_rate": 0.01,
                 "batch_size_test": 1000,
                 "n_epochs": 100,
-                "type": "Growing", # Pruning / Growing / Shifting
+                "type": "Shifting", # Pruning / Growing / Shifting
                 "method": "layer_conductance", # layer_conductance / l1_norm
                 "method2": "layer_conductance", # none / layer_conductance / l1_norm
                 "percentage": perc_iter_tuple[0],
