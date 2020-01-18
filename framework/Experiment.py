@@ -138,8 +138,11 @@ class Experiment:
             # logging.info("Batch : {} \t Loss: {}".format(batch_idx, loss.item()))
             loss.backward()
             self.trainLoss += loss.item()
-            pred = output.data.max(1, keepdim=True)[1]
-            correct += pred.eq(target.data.view_as(pred)).sum()
+            output = (output>0.5).float()
+            correct += (output == target).float().sum()
+
+            # pred = output.data.max(1, keepdim=True)[1]
+            # correct += pred.eq(target.data.view_as(pred)).sum()
             self.optimizer.step()
 
         self.tacc = 100. * correct / len(self.trainLoader.dataset)
@@ -157,8 +160,10 @@ class Experiment:
                 output = self.network(data)
                 loss = self.loss(output, target)
                 self.testLoss += loss.item()
-                pred = output.data.max(1, keepdim=True)[1]
-                correct += pred.eq(target.data.view_as(pred)).sum()
+                output = (output>0.5).float()
+                correct += (output == target).float().sum()
+                # pred = output.data.max(1, keepdim=True)[1]
+                # correct += pred.eq(target.data.view_as(pred)).sum()
             self.acc = 100. * correct / len(self.testLoader.dataset)
             self.traini = (time.time() - start_i)/len(self.testLoader.dataset)
             self.testLoss = self.testLoss * \
