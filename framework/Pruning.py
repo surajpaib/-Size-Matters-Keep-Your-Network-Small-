@@ -14,14 +14,14 @@ class Pruning(BaseClass):
     def set_model(self, model):
         self.prev_model = model
         self.new_model = copy.deepcopy(model)
-        print("Set Model for Pruning: \n")
-        self.print_model_structure(self.prev_model)
+        #print("Set Model for Pruning: \n")
+        #self.print_model_structure(self.prev_model)
         self.total_neurons = 0
         for idx, p in enumerate(self.new_model.named_parameters()):
             if len(p[1].data.size()) == 1 and p[0].split(".")[0] != 'output_layer':
                 self.total_neurons += p[1].data.size()[0]
 
-        print("Total Neurons in Network: ", self.total_neurons)
+        #print("Total Neurons in Network: ", self.total_neurons)
 
 
     def set_test_data(self, data):
@@ -40,7 +40,7 @@ class Pruning(BaseClass):
 
     def set_percentage(self, pruning_perc):
         self.pruning_perc = pruning_perc
-   
+
     def print_model_structure(self, model):
         for (layer, param) in enumerate(model.parameters()):
             print("Layer {} , Parameters: {}".format(layer, param.shape))
@@ -54,12 +54,12 @@ class Pruning(BaseClass):
         layer_importances = self.layer_importance()[:-1]
         layer_importances = np.array([1/v for v in layer_importances])
         total_neurons_to_prune = self.total_neurons * self.pruning_perc
-        print(total_neurons_to_prune)
+        #print(total_neurons_to_prune)
 
         neurons_to_prune = list(layer_importances/ np.sum(layer_importances) * total_neurons_to_prune) + [0]
 
         neurons_to_prune = [val for val in neurons_to_prune for _ in (0, 1)]
-        print(neurons_to_prune)
+        #print(neurons_to_prune)
 
         for idx, p in enumerate(self.new_model.named_parameters()):
             prune_idx = self.strategy(p, int(np.round(neurons_to_prune[idx])))
@@ -68,15 +68,15 @@ class Pruning(BaseClass):
 
 
     def l1_norm_pruning(self, p, n_neurons):
-        print("Neurons to prune: ", n_neurons)
+        #print("Neurons to prune: ", n_neurons)
         p = p[1]
-        print("Size:", len(p.data.size()))
+        #print("Size:", len(p.data.size()))
         if len(p.data.size()) != 1:
             normed_weights = p.data.abs()
             l1_norm_layer = [torch.sum(normed_weights[neuron_idx, :]).item() for neuron_idx in range(normed_weights.shape[0])]
             prune_idx = np.argpartition(np.array(l1_norm_layer), -(p.data.size()[0] - n_neurons))
             prune_idx = prune_idx[-(p.data.size()[0] - n_neurons):]
-            print("Neurons retained: ", len(prune_idx))
+            #print("Neurons retained: ", len(prune_idx))
         else:
             prune_idx = []
 
@@ -84,7 +84,7 @@ class Pruning(BaseClass):
 
 
     def layer_conductance_pruning(self, p, n_neurons):
-        print("Neurons to prune: ", n_neurons)
+        #print("Neurons to prune: ", n_neurons)
 
         _layer_name = p[0].split(".")
         if len(_layer_name) == 3:
@@ -103,7 +103,7 @@ class Pruning(BaseClass):
             # visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
             prune_idx = np.argpartition(np.array(neuron_values), -(p[1].data.size()[0] - n_neurons))
             prune_idx = prune_idx[-(p[1].data.size()[0] - n_neurons):]
-            print("Neurons Retained", len(prune_idx))
+            #print("Neurons Retained", len(prune_idx))
         else:
             prune_idx = []
 
@@ -171,8 +171,8 @@ class Pruning(BaseClass):
 
 
     def get_model(self):
-        print("Get Model after Pruning: \n")
-        self.print_model_structure(self.new_model)
+        #print("Get Model after Pruning: \n")
+        #self.print_model_structure(self.new_model)
         return self.new_model
 
     def get_optimizer(self):
