@@ -77,11 +77,8 @@ class Experiment:
             final_lst.pop()
             return(final_lst)
 
-        if iterations == 50:
-            exp_factor = 1.08005
-            const_factor = 1
-        elif iterations == 25:
-            exp_factor = 1.17755
+        if iterations == 20:
+            exp_factor = 1.23397
             const_factor = 1.5
         elif iterations == 10:
             exp_factor = 1.52268

@@ -84,11 +84,8 @@ class Experiment:
             final_lst.pop()
             return(final_lst)
 
-        if iterations == 50:
-            exp_factor = 1.08005
-            const_factor = 1
-        elif iterations == 25:
-            exp_factor = 1.17755
+        if iterations == 20:
+            exp_factor = 1.23397
             const_factor = 1.5
         elif iterations == 10:
             exp_factor = 1.52268
@@ -324,5 +321,6 @@ if __name__ == "__main__":
                             'params': experiment.params_dict
                         }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
 
-                    print('Distribution: ',distributions,' Percentage: ',str(perc_iter_tuple),' Fold ',str(i_fold),' epoch ',str(epoch))
+                    print('Distribution: ', distributions, ' Percentage: ', str(
+                        perc_iter_tuple), ' Fold ', str(i_fold), ' epoch ', str(epoch))
                     experiment.train_epoch(epoch)
