@@ -310,4 +310,5 @@ if __name__ == "__main__":
                                     'params': experiment.params_dict
                                 }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
 
+                        print('Distribution: ',distributions,' Percentage: ',str(perc_iter_tuple),' Fold ',str(i_fold),' epoch ',str(epoch))
                         experiment.train_epoch(epoch)

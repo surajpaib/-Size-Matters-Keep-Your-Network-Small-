@@ -13,8 +13,8 @@ class Growing(BaseClass):
     def set_model(self, model):
         self.prev_model = model
         self.new_model = copy.deepcopy(model)
-        print("Set Model for Growing: \n")
-        self.print_model_structure(self.prev_model)
+        #print("Set Model for Growing: \n")
+        #self.print_model_structure(self.prev_model)
 
     def set_test_data(self, data):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -65,14 +65,9 @@ class Growing(BaseClass):
         total_number_neurons = np.sum(neurons_per_layer)
         total_l1 = np.sum(meaned_l1_layer)
 
-        print('Total number of neurons to divide: ',int(total_number_neurons*self.growing_perc))
-
         add_per_layer = [int(round((x/total_l1)*total_number_neurons*self.growing_perc,0)) for x in meaned_l1_layer]
 
         self.number_neurons_per_layer = add_per_layer
-
-        print('Neurons to add per layer')
-        print(self.number_neurons_per_layer)
 
 
     def layer_conductance_growing(self):
@@ -105,15 +100,10 @@ class Growing(BaseClass):
         total_number_neurons = np.sum(neurons_per_layer)
         total_cond = np.sum(meaned_cond_layer)
 
-        print('Total number of neurons to divide: ',int(total_number_neurons*self.growing_perc))
-        print(meaned_cond_layer)
-
         add_per_layer = [int(round((x/total_cond)*total_number_neurons*self.growing_perc,0)) for x in meaned_cond_layer]
 
         self.number_neurons_per_layer = add_per_layer
 
-        print('Neurons to add per layer')
-        print(self.number_neurons_per_layer)
 
     def define_strategy(self):
         self.strategy()
@@ -178,8 +168,8 @@ class Growing(BaseClass):
 
     #copy pasta from pruning
     def get_model(self):
-        print("Get Model after Growing: \n")
-        self.print_model_structure(self.new_model)
+        #print("Get Model after Growing: \n")
+        #self.print_model_structure(self.new_model)
         return self.new_model
 
     def get_optimizer(self):
