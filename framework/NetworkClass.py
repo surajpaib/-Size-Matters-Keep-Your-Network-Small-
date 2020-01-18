@@ -1,9 +1,11 @@
 from includes import *
-from utils import get_activation_scheme, input_validation, get_layer_type_scheme
+from pgs_utils import get_activation_scheme, input_validation, get_layer_type_scheme
+
 
 class Network(nn.Module):
     """
     """
+
     def __init__(self, params):
         super(Network, self).__init__()
 
@@ -15,24 +17,26 @@ class Network(nn.Module):
         self.type_scheme = get_layer_type_scheme(network_params)
 
         # Construct the Network Definition
-        self.input_layer = self.type_scheme[0](network_params['input_layer']['units'], \
-            network_params['hidden_layer'][0]['units'])
+        self.input_layer = self.type_scheme[0](network_params['input_layer']['units'],
+                                               network_params['hidden_layer'][0]['units'])
 
-        #equal random weights
+        # equal random weights
         weight_init_bounds = 0.03
-        torch.nn.init.uniform_(self.input_layer.weight,-weight_init_bounds,weight_init_bounds)
+        torch.nn.init.uniform_(self.input_layer.weight, -
+                               weight_init_bounds, weight_init_bounds)
 
         self.hidden_layers = nn.ModuleList()
         for i in range(len(network_params['hidden_layer']) - 1):
             print('layer')
-            self.hidden_layers.append(self.type_scheme[i](network_params['hidden_layer'][i]['units'],\
-                network_params['hidden_layer'][i+1]['units']))
+            self.hidden_layers.append(self.type_scheme[i](network_params['hidden_layer'][i]['units'],
+                                                          network_params['hidden_layer'][i+1]['units']))
 
-            #equal random weights
-            torch.nn.init.uniform_(self.hidden_layers[-1].weight,-weight_init_bounds,weight_init_bounds)
+            # equal random weights
+            torch.nn.init.uniform_(
+                self.hidden_layers[-1].weight, -weight_init_bounds, weight_init_bounds)
 
-        self.output_layer = self.type_scheme[-1](network_params['hidden_layer'][-1]['units'],\
-                network_params['output_layer']['units'])
+        self.output_layer = self.type_scheme[-1](network_params['hidden_layer'][-1]['units'],
+                                                 network_params['output_layer']['units'])
         # Get choice of activations or if missing default to values
         self.activation_scheme = get_activation_scheme(network_params)
 
@@ -54,48 +58,47 @@ if __name__ == "__main__":
     # Provide Network Description Here.
     # Scalable to any number of units and activations within the Pytorch Functional API
     nn = Network({
-        "network":{
+        "network": {
             'input_layer': {
                 "units": 784,
 
-                },
+            },
             'hidden_layer': [{
-                    "units": 100,
-                    "type": "Linear"
-                },
+                "units": 100,
+                "type": "Linear"
+            },
                 {
                     "units": 4,
                     "activation": "relu",
                     "type": "Linear"
 
-                },
+            },
                 {
                     "units": 5,
                     "activation": "relu",
                     "type": "Linear"
 
-                },
+            },
                 {
                     "units": 5,
                     "activation": "relu",
                     "type": "Linear"
 
-                },
+            },
                 {
                     "units": 5,
                     "activation": "relu",
                     "type": "Linear"
 
-                }],
+            }],
             'output_layer': {
                 "units": 20,
                 "activation": "softmax",
                 "type": "Linear"
 
-                }
+            }
         }
     })
-
 
     # Print Network Description and test network forward and backprop with dummy IO
 
