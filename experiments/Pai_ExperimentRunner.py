@@ -316,8 +316,8 @@ if __name__ == "__main__":
                                 'traini': experiment.traini,
                                 'params': experiment.params_dict
                             }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
-                        print('Distribution: ',distributions,' Percentage: ',str(perc_iter_tuple),' Fold ',str(i_fold),' epoch ',str(epoch))
-                        tlbot.set_status('Distribution: {} Percentage: {} Fold: {} Epoch: {} \t Test Accuracy: {} Test Loss: {}'.format(distributions, perc_iter_tuple, i_fold+1, epoch, experiment.acc, experiment.testLoss))
+                        print('Distribution: ',distributions,' Percentage: ',str(perc_iter_tuple),' Fold ',str(i_fold),' epoch ',str(epoch), 'Acc', str(experiment.tacc))
+                        tlbot.set_status('Distribution: {} Percentage: {} Fold: {} Epoch: {} \t Train Accuracy: {} Test Accuracy: {} Test Loss: {} \n Network: {}'.format(distributions, perc_iter_tuple, i_fold+1, epoch, experiment.tacc, experiment.acc, experiment.testLoss, experiment.network))
 
                     experiment.train_epoch(epoch)
                 tlbot.sendmessage('Fold: {} \t Validation Accuracy: {} Val Loss: {} Inference Time: {} s'.format(i_fold+1, experiment.trainLoss, experiment.testLoss, experiment.traini))
