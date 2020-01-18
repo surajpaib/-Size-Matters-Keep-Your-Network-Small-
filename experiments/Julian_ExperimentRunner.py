@@ -197,7 +197,7 @@ if __name__ == "__main__":
             elif params_dict["type"] == "Growing":
                 growing = Growing(percentage=params_dict["percentage"])
             elif params_dict["type"] == "Shifting":
-                growing = Growing(percentage=params_dict["percentage"])
+                growing = Growing(percentage=params_dict["percentage2"])
                 pruning = Pruning(percentage=params_dict["percentage"])
 
 
