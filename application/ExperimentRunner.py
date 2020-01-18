@@ -2,6 +2,9 @@ import sys
 import logging
 import time
 import shutil
+import string
+import random
+import os
 
 import torch
 import torchvision
@@ -12,6 +15,11 @@ sys.path.append('framework')
 from NetworkClass import Network
 from Pruning import Pruning
 from train_utils import ReshapeTransform
+
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
 
 
 class Experiment:
@@ -95,7 +103,7 @@ class Experiment:
         return(list(map(bool, final_lst)))
     
     def train_epoch(self, epoch):
-        trainLoss = 0.0
+        self.trainLoss = 0.0
         correct = 0.0
         self.network.train()
         start_t = time.time()
@@ -106,18 +114,18 @@ class Experiment:
             loss = self.loss(output, target)
             # logging.info("Batch : {} \t Loss: {}".format(batch_idx, loss.item()))
             loss.backward()
-            trainLoss += loss.item()
+            self.trainLoss += loss.item()
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).sum()
             self.optimizer.step()
 
-        tacc = 100. * correct / len(self.trainLoader.dataset)
-        traint = time.time() - start_t
-        trainLoss = trainLoss * self.trainLoader.batch_size / len(self.trainLoader.dataset)
+        self.tacc = 100. * correct / len(self.trainLoader.dataset)
+        self.traint = time.time() - start_t
+        self.trainLoss = self.trainLoss * self.trainLoader.batch_size / len(self.trainLoader.dataset)
 
 
 
-        testLoss = 0.0
+        self.testLoss = 0.0
         correct = 0.0
         self.network.eval()
         start_i = time.time()
@@ -126,33 +134,28 @@ class Experiment:
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.network(data)
                 loss = self.loss(output, target)
-                testLoss += loss.item()
+                self.testLoss += loss.item()
                 pred = output.data.max(1, keepdim=True)[1]
                 correct += pred.eq(target.data.view_as(pred)).sum()
-            acc = 100. * correct / len(self.testLoader.dataset)
-            traini = (time.time() - start_i)/len(self.testLoader.dataset)
-            testLoss = testLoss * self.testLoader.batch_size /len(self.testLoader.dataset)
+            self.acc = 100. * correct / len(self.testLoader.dataset)
+            self.traini = (time.time() - start_i)/len(self.testLoader.dataset)
+            self.testLoss = self.testLoss * self.testLoader.batch_size /len(self.testLoader.dataset)
 
         # logging.info("VALIDATION: \t Loss: {}, Accuracy : {}".format(testLoss, acc))        
-        self.save_tensorboard_summary({'train':trainLoss, 'val': testLoss, 'acc': acc, 'epoch': epoch, 'traint': traint, 'traini': traini, 'tacc':tacc})
+        self.save_tensorboard_summary({'train':self.trainLoss, 'val': self.testLoss, 'acc': self.acc, 'epoch': epoch, 'traint': self.traint, 'traini': self.traini, 'tacc':self.tacc})
 
-        self.bestLoss = min(testLoss, self.bestLoss)
-        self.is_best = (self.bestLoss == testLoss)
+        self.bestLoss = min(self.testLoss, self.bestLoss)
+        self.is_best = (self.bestLoss == self.testLoss)
 
-        self.save_weights({
-                'epoch': epoch,
-                'state_dict': self.network.state_dict(),
-                'best_acc1': self.bestLoss,
-                'optimizer' : self.optimizer.state_dict(),
-                'traint': traint,
-                'traini': traini,
-                'params': self.params_dict
-            })
 
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.CRITICAL)
+
+    if not(os.path.isdir('models')):
+        os.mkdir('models')
+
 
     params_dict = {
         "batch_size_train": 100,
@@ -168,6 +171,7 @@ if __name__ == "__main__":
     # batch_size_train = 100
     # learning_rate = 0.01
     seed = 42
+    uid = randomString(stringLength=6)
     # batch_size_test = 1000
     # n_epochs = 100
 
@@ -193,19 +197,19 @@ if __name__ == "__main__":
                 
                 },
             'hidden_layer': [{
-                    "units": 100, 
+                    "units": 168, 
                     "activation": "relu",
                     "type": "Linear"
                 }
                 , 
                 {
-                    "units": 100, 
+                    "units": 168, 
                     "activation": "relu",
                     "type": "Linear"
 
                 }, 
                 {
-                    "units": 100, 
+                    "units": 168, 
                     "activation": "relu",
                     "type": "Linear"
 
@@ -260,6 +264,19 @@ if __name__ == "__main__":
                 optimizer, model = pruning.prune_model(experiment.optimizer, experiment.network, eval('pruning.{}'.format(params_dict["method"])))
                 experiment.set_optimizer(optimizer)
                 experiment.set_network(model)
+                
+                experiment.save_weights({
+                        'epoch': epoch,
+                        'state_dict': experiment.network.state_dict(),
+                        'train_acc': experiment.tacc,
+                        'val_acc': experiment.acc,
+                        'train_loss': experiment.trainLoss,
+                        'val_loss': experiment.testLoss,
+                        'optimizer' : experiment.optimizer.state_dict(),
+                        'traint': experiment.traint,
+                        'traini': experiment.traini,
+                        'params': experiment.params_dict
+                    }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, params_dict["method"]))
                 
             experiment.train_epoch(epoch)
         
