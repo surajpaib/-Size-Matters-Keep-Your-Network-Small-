@@ -100,8 +100,9 @@ class Pruning(BaseClass):
             neuron_values = np.mean(cond_vals, axis=0)
             # Do we really need visualization?
             # visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
-            threshold = np.percentile(np.array(neuron_values), percentage)
-            prune_idx = np.argwhere(np.array(neuron_values) > threshold).flatten()
+            threshold = np.percentile(np.array(neuron_values), percentage, interpolation='nearest')
+            prune_idx = np.argwhere(np.array(neuron_values) >= threshold).flatten()
+            print("Neurons Retained", len(prune_idx))
         else:
             prune_idx = []
 
@@ -145,7 +146,7 @@ class Pruning(BaseClass):
 
             # Condition check for all layers except the last 2. Last two layers do not prune number of neurons.
             if i < len(self.param_list) - 2:
-                print(neuron_idx)
+                # print(neuron_idx)
 
                 # Set y as weights of all neurons to keep
                 y = idx_weights[neuron_idx]

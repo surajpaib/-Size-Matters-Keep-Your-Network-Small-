@@ -163,7 +163,7 @@ if __name__ == "__main__":
         "batch_size_test": 1000,
         "n_epochs": 100,
         "type": "Pruning",
-        "method": "l1_norm_pruning",
+        "method": "layer_conductance_pruning",
         "percentage": 0.0582,
         "iterations": 50,
         "distribution": "equal"
