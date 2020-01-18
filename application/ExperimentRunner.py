@@ -192,6 +192,7 @@ if __name__ == "__main__":
     elif params_dict["type"] == "Growing":
         growing = Growing(percentage=params_dict["percentage"])
     elif params_dict["type"] == "Shifting":
+
         growing = Growing(percentage=params_dict["percentage"])
         pruning = Pruning(percentage=params_dict["percentage"])
 
@@ -271,7 +272,7 @@ if __name__ == "__main__":
                 _type_stam = _type[:-3]
                 _method_add = _type_stam + 'ing'
                 _method = params_dict['method']+'_'+_method_add
-
+                
                 if _type_stam[-1] == 'n':
                     _type_stam += 'e'
 
