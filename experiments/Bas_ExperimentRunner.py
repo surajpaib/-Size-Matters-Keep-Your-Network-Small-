@@ -39,7 +39,7 @@ if __name__ == "__main__":
             for method in ["l1_norm", "layer_conductance"]:
 
                 params_dict = {
-                    "batch_size_train": 512,
+                    "batch_size_train": 100,
                     "learning_rate": 0.01,
                     "batch_size_test": 1000,
                     "n_epochs": 100,

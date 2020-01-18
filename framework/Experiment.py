@@ -18,6 +18,7 @@ from NetworkClass import Network
 from Pruning import Pruning
 from Growing import Growing
 from train_utils import ReshapeTransform
+import numpy as np
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -138,7 +139,10 @@ class Experiment:
             # logging.info("Batch : {} \t Loss: {}".format(batch_idx, loss.item()))
             loss.backward()
             self.trainLoss += loss.item()
-            output = (output>0.5).float()
+            output = torch.argmax(output, dim=1)
+            # print(output)
+            # print(target)
+
             correct += (output == target).float().sum()
 
             # pred = output.data.max(1, keepdim=True)[1]
@@ -146,6 +150,7 @@ class Experiment:
             self.optimizer.step()
 
         self.tacc = 100. * correct / len(self.trainLoader.dataset)
+     
         self.traint = time.time() - start_t
         self.trainLoss = self.trainLoss * \
             self.trainLoader.batch_size / len(self.trainLoader.dataset)
@@ -160,11 +165,16 @@ class Experiment:
                 output = self.network(data)
                 loss = self.loss(output, target)
                 self.testLoss += loss.item()
-                output = (output>0.5).float()
+                output = torch.argmax(output, dim=1)
+                # print(output)
+                # print(target)
+
                 correct += (output == target).float().sum()
                 # pred = output.data.max(1, keepdim=True)[1]
                 # correct += pred.eq(target.data.view_as(pred)).sum()
             self.acc = 100. * correct / len(self.testLoader.dataset)
+      
+
             self.traini = (time.time() - start_i)/len(self.testLoader.dataset)
             self.testLoss = self.testLoss * \
                 self.testLoader.batch_size / len(self.testLoader.dataset)
