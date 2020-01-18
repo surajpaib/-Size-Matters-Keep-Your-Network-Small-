@@ -53,30 +53,29 @@ class Pruning(BaseClass):
         self.neurons_retained = []
         layer_importances = self.layer_importance()[:-1]
         layer_importances = np.array([1/v for v in layer_importances])
-        layer_percentages = list(layer_importances/ np.sum(layer_importances) * self.pruning_perc * 100) + [0]
+        total_neurons_to_prune = self.total_neurons * self.pruning_perc
+        print(total_neurons_to_prune)
 
-        layer_percentages = [val for val in layer_percentages for _ in (0, 1)]
-        print(layer_percentages)
+        neurons_to_prune = list(layer_importances/ np.sum(layer_importances) * total_neurons_to_prune) + [0]
+
+        neurons_to_prune = [val for val in neurons_to_prune for _ in (0, 1)]
+        print(neurons_to_prune)
 
         for idx, p in enumerate(self.new_model.named_parameters()):
-
-            percentage_to_prune_at_layer = (layer_percentages[idx] * self.total_neurons)/p[1].data.size()[0]
-            print(percentage_to_prune_at_layer)
-            prune_idx = self.strategy(p, percentage_to_prune_at_layer)
+            prune_idx = self.strategy(p, int(np.round(neurons_to_prune[idx])))
             if len(prune_idx) > 0:
                 self.neurons_retained.append(prune_idx)
 
 
-    def l1_norm_pruning(self, p, percentage):
+    def l1_norm_pruning(self, p, n_neurons):
+        print("Neurons to prune: ", n_neurons)
         p = p[1]
         print("Size:", len(p.data.size()))
         if len(p.data.size()) != 1:
             normed_weights = p.data.abs()
             l1_norm_layer = [torch.sum(normed_weights[neuron_idx, :]).item() for neuron_idx in range(normed_weights.shape[0])]
-            threshold = np.percentile(np.array(l1_norm_layer), percentage, interpolation='nearest')
-            print("Threshold Value", threshold)
-
-            prune_idx = np.argwhere(np.array(l1_norm_layer) >= threshold).flatten()
+            prune_idx = np.argpartition(np.array(l1_norm_layer), -(p.data.size()[0] - n_neurons))
+            prune_idx = prune_idx[-(p.data.size()[0] - n_neurons):]
             print("Neurons retained: ", len(prune_idx))
         else:
             prune_idx = []
@@ -84,7 +83,9 @@ class Pruning(BaseClass):
         return prune_idx
 
 
-    def layer_conductance_pruning(self, p, percentage):
+    def layer_conductance_pruning(self, p, n_neurons):
+        print("Neurons to prune: ", n_neurons)
+
         _layer_name = p[0].split(".")
         if len(_layer_name) == 3:
             layer_name = _layer_name[0] + '[' + _layer_name[1] + ']'
@@ -96,12 +97,12 @@ class Pruning(BaseClass):
 
             cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
             cond_vals = cond.attribute(self.test_data,target=self.test_target)
-            cond_vals = cond_vals.cpu().detach().numpy()
+            cond_vals = np.abs(cond_vals.cpu().detach().numpy())
             neuron_values = np.mean(cond_vals, axis=0)
             # Do we really need visualization?
             # visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
-            threshold = np.percentile(np.array(neuron_values), percentage, interpolation='nearest')
-            prune_idx = np.argwhere(np.array(neuron_values) >= threshold).flatten()
+            prune_idx = np.argpartition(np.array(neuron_values), -(p[1].data.size()[0] - n_neurons))
+            prune_idx = prune_idx[-(p[1].data.size()[0] - n_neurons):]
             print("Neurons Retained", len(prune_idx))
         else:
             prune_idx = []
