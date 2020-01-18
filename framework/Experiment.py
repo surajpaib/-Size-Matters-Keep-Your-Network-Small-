@@ -19,6 +19,9 @@ from Pruning import Pruning
 from Growing import Growing
 from train_utils import ReshapeTransform
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 class Experiment:
     def __init__(self, device):
         self.is_best = True
@@ -167,4 +170,8 @@ class Experiment:
 
         self.bestLoss = min(self.testLoss, self.bestLoss)
         self.is_best = (self.bestLoss == self.testLoss)
+
+
+        return {'training_time': self.traint, 'inference_time': self.traini, 'model_parameters': count_parameters(self.network), 'training_acc': self.tacc, 'test_acc': self.acc}
+
 

@@ -193,4 +193,6 @@ if __name__ == "__main__":
                             }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
                         print('Distribution: ', distributions, ' Percentage: ', str(
                             perc_iter_tuple), ' Fold ', str(i_fold), ' epoch ', str(epoch))
-                        experiment.train_epoch(epoch)
+                        epoch_vals = experiment.train_epoch(epoch)
+                        print(epoch_vals)
+                        print(experiment.network)
