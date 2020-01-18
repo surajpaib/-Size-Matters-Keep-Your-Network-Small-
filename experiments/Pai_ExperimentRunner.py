@@ -13,6 +13,12 @@ from sklearn.model_selection import KFold
 
 sys.path.append('framework')
 sys.path.append('application')
+sys.path.append('telegram-bot')
+
+from dl_bot import DLBot
+
+tlbot = DLBot('1016809619:AAE2ZdMabT6d706Y8sHc9r3_Fi8YxTz_iW8', None)
+tlbot.activate_bot()
 
 from NetworkClass import Network
 from Pruning import Pruning
@@ -162,7 +168,7 @@ if __name__ == "__main__":
     for distributions in ["equal", "incr", "decr"]:
         for perc_iter_tuple in [(0.1088*2, 0.1221, 20), (0.2057*2, 0.259, 10), (0.0718, 0.1547, 10), (0.0353, 0.0732, 20), (0.2057, 0.259, 10), (0.0353, 0.0367, 20)]:
             # for method in ["l1_norm", "layer_conductance"]:
-
+            tlbot.send_message('Starting training with {} with and {}'.format(distributions, perc_iter_tuple))
             params_dict = {
                 "batch_size_train": 100,
                 "learning_rate": 0.01,
@@ -252,6 +258,7 @@ if __name__ == "__main__":
 
             kf = KFold(n_splits=5, shuffle=True, random_state=seed)
             for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
+                tlbot.send_message('Starting Fold : {}'.format(i_fold+1))
                 # new fold - network from scratch
                 model = Network(model_dict)
                 params_dict["fold"] = i_fold+1
@@ -271,7 +278,6 @@ if __name__ == "__main__":
                 # training loop
                 for idx, epoch in enumerate(range(params_dict["n_epochs"])):
                     if iter_list[idx]:
-
                         _type = params_dict['type'].lower()
                         _type_stam = _type[:-3]
                         _method_add = _type_stam + 'ing'
@@ -310,5 +316,8 @@ if __name__ == "__main__":
                                 'traini': experiment.traini,
                                 'params': experiment.params_dict
                             }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
-                    print('Distribution: ',distributions,' Percentage: ',str(perc_iter_tuple),' Fold ',str(i_fold),' epoch ',str(epoch))
+                        print('Distribution: ',distributions,' Percentage: ',str(perc_iter_tuple),' Fold ',str(i_fold),' epoch ',str(epoch))
+                        tlbot.set_status('Distribution: {} Percentage: {} Fold: {} Epoch: {} \t Test Accuracy: {} Test Loss: {}'.format(distributions, perc_iter_tuple, i_fold+1, epoch, experiment.acc, experiment.testLoss))
+
                     experiment.train_epoch(epoch)
+                tlbot.sendmessage('Fold: {} \t Validation Accuracy: {} Val Loss: {} Inference Time: {} s'.format(i_fold+1, experiment.trainLoss, experiment.testLoss, experiment.traini))
