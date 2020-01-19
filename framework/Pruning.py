@@ -101,8 +101,11 @@ class Pruning(BaseClass):
             neuron_values = np.mean(cond_vals, axis=0)
             # Do we really need visualization?
             # visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
-            prune_idx = np.argpartition(np.array(neuron_values), -(p[1].data.size()[0] - n_neurons))
-            prune_idx = prune_idx[-(p[1].data.size()[0] - n_neurons):]
+            try:
+                prune_idx = np.argpartition(np.array(neuron_values), -(p[1].data.size()[0] - n_neurons))
+                prune_idx = prune_idx[-(p[1].data.size()[0] - n_neurons):]
+            except:
+                prune_idx = []
             #print("Neurons Retained", len(prune_idx))
         else:
             prune_idx = []
