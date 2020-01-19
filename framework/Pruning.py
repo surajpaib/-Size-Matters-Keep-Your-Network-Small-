@@ -52,11 +52,11 @@ class Pruning(BaseClass):
         """
         self.neurons_retained = []
         layer_importances = self.layer_importance(self.strategy.__name__)[:-1]
-        layer_importances = np.array([1/v for v in layer_importances])
+        layer_importances = np.array([1/v if v != 0 else 1/0.000001 for v in layer_importances])
         total_neurons_to_prune = self.total_neurons * self.pruning_perc
         #print(total_neurons_to_prune)
 
-        neurons_to_prune = list(layer_importances/ np.sum(layer_importances) * total_neurons_to_prune) + [0]
+        neurons_to_prune = list(layer_importances/ np.nansum(layer_importances) * total_neurons_to_prune) + [0]
 
         neurons_to_prune = [val for val in neurons_to_prune for _ in (0, 1)]
         #print(neurons_to_prune)
@@ -77,7 +77,7 @@ class Pruning(BaseClass):
                 prune_idx = np.argpartition(np.array(l1_norm_layer), -(p.data.size()[0] - n_neurons))
                 prune_idx = prune_idx[-(p.data.size()[0] - n_neurons):]
             except:
-                prune_idx = []
+                prune_idx = list(range(p.data.size()[0]))
         else:
             prune_idx = []
 
@@ -98,7 +98,7 @@ class Pruning(BaseClass):
             cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
             cond_vals = cond.attribute(self.test_data,target=self.test_target)
             cond_vals = np.abs(cond_vals.cpu().detach().numpy())
-            neuron_values = np.mean(cond_vals, axis=0)
+            neuron_values = np.nanmean(cond_vals, axis=0)
             # Do we really need visualization?
             # visualize_importances(cond_vals.shape[1], neuron_values, p[0] + '{}'.format(time.time()))
             try:
@@ -140,7 +140,7 @@ class Pruning(BaseClass):
                     cond_vals = cond.attribute(self.test_data,target=self.test_target)
                     cond_vals = np.abs(cond_vals.cpu().detach().numpy())
 
-                    layer_importance_val = np.mean(cond_vals)
+                    layer_importance_val = np.nanmean(cond_vals)
                     layer_importance_list.append(layer_importance_val)
 
             return layer_importance_list
