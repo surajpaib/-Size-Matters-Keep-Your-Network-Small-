@@ -53,6 +53,7 @@ class Experiment:
         network = Network(model_dict)
         self.network = network
         self.network = self.network.to(self.device)
+        self.set_optimizer(torch.optim.SGD(self.network.parameters(), lr=self.params_dict["learning_rate"]))
 
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
