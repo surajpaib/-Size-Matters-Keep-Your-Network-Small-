@@ -89,7 +89,7 @@ class Growing(BaseClass):
                 print('total number neurons ', total_number_neurons)
                 print('cond of layer ', x)
                 add_p_layer = 0
-                send_slack_message('growing except has occured')
+                #send_slack_message('growing except has occured')
 
             add_per_layer.append(add_p_layer)
 
@@ -141,7 +141,7 @@ class Growing(BaseClass):
                 print('total number neurons ', total_number_neurons)
                 print('cond of layer ', x)
                 add_p_layer = 0
-                send_slack_message('growing except has occured')
+                #send_slack_message('growing except has occured')
 
             add_per_layer.append(add_p_layer)
 
