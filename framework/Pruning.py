@@ -68,15 +68,16 @@ class Pruning(BaseClass):
 
 
     def l1_norm_pruning(self, p, n_neurons):
-        #print("Neurons to prune: ", n_neurons)
+
         p = p[1]
-        #print("Size:", len(p.data.size()))
         if len(p.data.size()) != 1:
             normed_weights = p.data.abs()
             l1_norm_layer = [torch.sum(normed_weights[neuron_idx, :]).item() for neuron_idx in range(normed_weights.shape[0])]
-            prune_idx = np.argpartition(np.array(l1_norm_layer), -(p.data.size()[0] - n_neurons))
-            prune_idx = prune_idx[-(p.data.size()[0] - n_neurons):]
-            #print("Neurons retained: ", len(prune_idx))
+            try:
+                prune_idx = np.argpartition(np.array(l1_norm_layer), -(p.data.size()[0] - n_neurons))
+                prune_idx = prune_idx[-(p.data.size()[0] - n_neurons):]
+            except:
+                prune_idx = []
         else:
             prune_idx = []
 
@@ -84,7 +85,6 @@ class Pruning(BaseClass):
 
 
     def layer_conductance_pruning(self, p, n_neurons):
-        #print("Neurons to prune: ", n_neurons)
 
         _layer_name = p[0].split(".")
         if len(_layer_name) == 3:
