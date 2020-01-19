@@ -5,6 +5,17 @@ import torch.nn as nn
 import numpy as np
 from captum.attr import LayerConductance
 
+import slack
+
+
+def send_slack_message(message):
+
+    slack_token = 'xoxp-754321514487-754671333574-911014833008-f9b7135688081ff589a9ee53988bbcee'
+    client = slack.WebClient(token=slack_token)
+    response = client.chat_postMessage(
+        channel='bots',
+        text=message)
+
 
 class Growing(BaseClass):
     def __init__(self, percentage):
@@ -93,14 +104,29 @@ class Growing(BaseClass):
                 cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
                 cond_vals = cond.attribute(self.test_data,target=self.test_target)
                 cond_vals = cond_vals.cpu().detach().numpy()
-                layer_value = np.mean(np.absolute(cond_vals))
+                layer_value = np.nanmean(np.absolute(cond_vals))
                 meaned_cond_layer.append(layer_value)
 
         #dont take into account output layer
-        total_number_neurons = np.sum(neurons_per_layer)
-        total_cond = np.sum(meaned_cond_layer)
+        total_number_neurons = np.nansum(neurons_per_layer)
+        total_cond = np.nansum(meaned_cond_layer)
 
-        add_per_layer = [int(round((x/total_cond)*total_number_neurons*self.growing_perc,0)) for x in meaned_cond_layer]
+
+
+        add_per_layer = []
+
+        for x in meaned_cond_layer:
+            try:
+                add_p_layer = int(round((x/total_cond)*total_number_neurons*self.growing_perc,0))
+            except:
+                print('Could not calculate layer cond value, so 0 used, parameters:')
+                print('total_cond ',total_cond)
+                print('total number neurons ', total_number_neurons)
+                print('cond of layer ', x)
+                add_p_layer = 0
+                send_slack_message('growing except has occured')
+
+            add_per_layer.append(add_p_layer)
 
         self.number_neurons_per_layer = add_per_layer
 
