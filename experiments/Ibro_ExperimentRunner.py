@@ -194,4 +194,3 @@ if __name__ == "__main__":
                     epoch_vals = experiment.train_epoch(epoch)
                     logging.info(epoch_vals)
                     logging.info(experiment.network)
-                break
