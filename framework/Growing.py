@@ -151,9 +151,9 @@ class Growing(BaseClass):
             add_weights_2 = add_weights_2.to(device)
 
             #Randomize
-            nn.init.uniform_(add_weights_1, a = layer_weights_1.data.min().item() , b = layer_weights_1.data.max().item())
-            nn.init.uniform_(add_bias_1,  a = layer_bias_1.data.min().item() , b = layer_bias_1.data.max().item())
-            nn.init.uniform_(add_weights_2, a = layer_weights_2.data.min().item() , b = layer_weights_2.data.max().item())
+            nn.init.normal_(add_weights_1, mean = layer_weights_1.data.mean().item())
+            nn.init.normal_(add_bias_1,  mean = layer_bias_1.data.mean().item())
+            nn.init.normal_(add_weights_2, mean = layer_weights_2.data.mean().item())
 
             #merge weights
             new_weights_1 = torch.cat([layer_weights_1,add_weights_1],dim=0) #add bottom row
