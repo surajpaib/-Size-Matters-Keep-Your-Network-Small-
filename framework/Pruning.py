@@ -105,7 +105,7 @@ class Pruning(BaseClass):
                 prune_idx = np.argpartition(np.array(neuron_values), -(p[1].data.size()[0] - n_neurons))
                 prune_idx = prune_idx[-(p[1].data.size()[0] - n_neurons):]
             except:
-                prune_idx = []
+                prune_idx = list(range(p.data.size()[0]))
             #print("Neurons Retained", len(prune_idx))
         else:
             prune_idx = []

@@ -186,3 +186,4 @@ if __name__ == "__main__":
                         epoch_vals = experiment.train_epoch(epoch)
                         print(epoch_vals)
                         print(experiment.network)
+                    break
