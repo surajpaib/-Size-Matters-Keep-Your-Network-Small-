@@ -176,9 +176,7 @@ class Pruning(BaseClass):
         return self.new_model
 
     def get_optimizer(self):
-        self.new_optimizer = torch.optim.SGD(self.new_model.parameters(), lr=self.lr)
-        self.new_optimizer.load_state_dict(self.prev_optimizer.state_dict())
-        return self.new_optimizer
+        return self.prev_optimizer
 
     def get_optimizer_model(self):
         return self.get_optimizer(), self.get_model()

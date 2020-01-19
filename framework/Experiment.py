@@ -47,6 +47,9 @@ class Experiment:
 
         self.network = updated_model
         self.network = self.network.to(self.device)
+        self.new_optimizer = torch.optim.SGD(self.network.parameters(), lr=self.optimizer.state_dict()['param_groups'][0]['lr'])
+        self.new_optimizer.load_state_dict(self.optimizer.state_dict())
+        self.optimizer = self.new_optimizer
 
     def set_network(self, model_dict):
         self.model_dict = model_dict
