@@ -51,7 +51,7 @@ class Pruning(BaseClass):
             Neurons retained should contain a list of neurons to be kept at each layer with hidden units.
         """
         self.neurons_retained = []
-        layer_importances = self.layer_importance()[:-1]
+        layer_importances = self.layer_importance(self.strategy.__name__)[:-1]
         layer_importances = np.array([1/v for v in layer_importances])
         total_neurons_to_prune = self.total_neurons * self.pruning_perc
         #print(total_neurons_to_prune)
@@ -110,26 +110,37 @@ class Pruning(BaseClass):
         return prune_idx
 
 
-    def layer_importance(self):
+    def layer_importance(self, strategy):
         layer_importance_list = []
 
-        for p in self.new_model.named_parameters():
 
-            _layer_name = p[0].split(".")
-            if len(_layer_name) == 3:
-                layer_name = _layer_name[0] + '[' + _layer_name[1] + ']'
-            elif len(_layer_name) == 2:
-                layer_name = _layer_name[0]
+        if strategy == "l1_norm_pruning":
+            for p in self.new_model.parameters():
+                if len(p.data.size()) != 1:
+                    normed_weights = p.data.abs()
+                    layer_importance_list.append(torch.mean(normed_weights).item())
 
-            if len(p[1].data.size()) != 1:
-                cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
-                cond_vals = cond.attribute(self.test_data,target=self.test_target)
-                cond_vals = np.abs(cond_vals.cpu().detach().numpy())
+            return layer_importance_list
 
-                layer_importance_val = np.mean(cond_vals)
-                layer_importance_list.append(layer_importance_val)
 
-        return layer_importance_list
+        elif strategy == "layer_conductance_pruning":
+            for p in self.new_model.named_parameters():
+
+                _layer_name = p[0].split(".")
+                if len(_layer_name) == 3:
+                    layer_name = _layer_name[0] + '[' + _layer_name[1] + ']'
+                elif len(_layer_name) == 2:
+                    layer_name = _layer_name[0]
+
+                if len(p[1].data.size()) != 1:
+                    cond = LayerConductance(self.new_model, eval('self.new_model.' + layer_name))
+                    cond_vals = cond.attribute(self.test_data,target=self.test_target)
+                    cond_vals = np.abs(cond_vals.cpu().detach().numpy())
+
+                    layer_importance_val = np.mean(cond_vals)
+                    layer_importance_list.append(layer_importance_val)
+
+            return layer_importance_list
 
     def apply_strategy(self):
         self.define_strategy()

@@ -152,7 +152,7 @@ class Experiment:
             else:
                 end.record()
                 torch.cuda.synchronize()
-                total_time += start.elapsed_time(end)            
+                total_time += start.elapsed_time(end)/1000            
             loss = self.loss(output, target)
             # logging.info("Batch : {} \t Loss: {}".format(batch_idx, loss.item()))
             if not(torch.cuda.is_available()):
@@ -169,7 +169,7 @@ class Experiment:
             else:
                 end.record()
                 torch.cuda.synchronize()
-                total_time += start.elapsed_time(end)  
+                total_time += start.elapsed_time(end)/1000
 
             self.trainLoss += loss.item()
             output = torch.argmax(output, dim=1)
@@ -209,7 +209,7 @@ class Experiment:
                 else:
                     end.record()
                     torch.cuda.synchronize()
-                    inference_time += start.elapsed_time(end)  
+                    inference_time += start.elapsed_time(end)/1000
 
                 loss = self.loss(output, target)
                 self.testLoss += loss.item()
