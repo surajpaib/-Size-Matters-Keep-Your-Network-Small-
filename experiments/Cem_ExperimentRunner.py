@@ -28,7 +28,7 @@ def randomString(stringLength=10):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.CRITICAL)
+    logging.basicConfig(level=logging.INFO)
 
     if not(os.path.isdir('models')):
         os.mkdir('models')
@@ -182,8 +182,8 @@ if __name__ == "__main__":
                                     'params': experiment.params_dict
                                 }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
 
-                        print('Distribution: ', distributions, ' Percentage: ', str(perc_iter_tuple), ' Fold ', str(i_fold), ' Epoch: ', str(epoch))
+                        logging.info('Distribution: ', distributions, ' Percentage: ', str(perc_iter_tuple), ' Fold ', str(i_fold), ' Epoch: ', str(epoch))
                         epoch_vals = experiment.train_epoch(epoch)
-                        print(epoch_vals)
-                        print(experiment.network)
+                        logging.info(epoch_vals)
+                        logging.info(experiment.network)
                     break
