@@ -5,16 +5,16 @@ import torch.nn as nn
 import numpy as np
 from captum.attr import LayerConductance
 
-import slack
+# import slack
 
 
-def send_slack_message(message):
+# def send_slack_message(message):
 
-    slack_token = 'xoxp-754321514487-754671333574-911014833008-f9b7135688081ff589a9ee53988bbcee'
-    client = slack.WebClient(token=slack_token)
-    response = client.chat_postMessage(
-        channel='bots',
-        text=message)
+#     slack_token = 'xoxp-754321514487-754671333574-911014833008-f9b7135688081ff589a9ee53988bbcee'
+#     client = slack.WebClient(token=slack_token)
+#     response = client.chat_postMessage(
+#         channel='bots',
+#         text=message)
 
 
 class Growing(BaseClass):
@@ -89,7 +89,7 @@ class Growing(BaseClass):
                 print('total number neurons ', total_number_neurons)
                 print('cond of layer ', x)
                 add_p_layer = 0
-                send_slack_message('growing except has occured')
+                # send_slack_message('growing except has occured')
 
             add_per_layer.append(add_p_layer)
 
@@ -141,7 +141,7 @@ class Growing(BaseClass):
                 print('total number neurons ', total_number_neurons)
                 print('cond of layer ', x)
                 add_p_layer = 0
-                send_slack_message('growing except has occured')
+                # send_slack_message('growing except has occured')
 
             add_per_layer.append(add_p_layer)
 

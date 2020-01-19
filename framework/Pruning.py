@@ -52,7 +52,7 @@ class Pruning(BaseClass):
         """
         self.neurons_retained = []
         layer_importances = self.layer_importance(self.strategy.__name__)[:-1]
-        layer_importances = np.array([1/v if v != 0 else 1/0.000001 for v in layer_importances])
+        layer_importances = np.array([1/v if v != 0 else 1.0 for v in layer_importances])
         total_neurons_to_prune = self.total_neurons * self.pruning_perc
         #print(total_neurons_to_prune)
 
