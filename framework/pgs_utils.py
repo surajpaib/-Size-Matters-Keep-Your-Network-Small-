@@ -42,7 +42,6 @@ def get_activation_scheme(params):
 
     if 'activation' in params['output_layer']:
         activation_function = params['output_layer']['activation']
-        print(activation_function)
         if activation_function in dir(F):
             activations_list.append(eval('F.'+activation_function))
         else:

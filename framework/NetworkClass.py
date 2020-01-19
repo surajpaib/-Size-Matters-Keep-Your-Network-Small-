@@ -27,7 +27,6 @@ class Network(nn.Module):
 
         self.hidden_layers = nn.ModuleList()
         for i in range(len(network_params['hidden_layer']) - 1):
-            print('layer')
             self.hidden_layers.append(self.type_scheme[i](network_params['hidden_layer'][i]['units'],
                                                           network_params['hidden_layer'][i+1]['units']))
 
@@ -102,7 +101,6 @@ if __name__ == "__main__":
 
     # Print Network Description and test network forward and backprop with dummy IO
 
-    print(list(nn.parameters()))
     input = torch.randn(1, 1, 784)
     target = torch.randn(1, 1, 20)
     out = nn(input)

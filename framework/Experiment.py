@@ -131,14 +131,43 @@ class Experiment:
         self.trainLoss = 0.0
         correct = 0.0
         self.network.train()
-        start_t = time.time()
+        total_time = 0.0
+      
+
         for batch_idx, (data, target) in enumerate(self.trainLoader):
             data, target = data.to(self.device), target.to(self.device)
             self.optimizer.zero_grad()
+            if not(torch.cuda.is_available()):
+                start_t = time.time()
+            else:
+                start = torch.cuda.Event(enable_timing=True)
+                end = torch.cuda.Event(enable_timing=True)
+                start.record()
             output = self.network(data)
+            if not(torch.cuda.is_available()):
+                total_time += time.time() - start_t
+            else:
+                end.record()
+                torch.cuda.synchronize()
+                total_time += start.elapsed_time(end)            
             loss = self.loss(output, target)
             # logging.info("Batch : {} \t Loss: {}".format(batch_idx, loss.item()))
+            if not(torch.cuda.is_available()):
+                start_t = time.time()
+            else:
+                start = torch.cuda.Event(enable_timing=True)
+                end = torch.cuda.Event(enable_timing=True)
+                start.record()
+
             loss.backward()
+
+            if not(torch.cuda.is_available()):
+                total_time += time.time() - start_t
+            else:
+                end.record()
+                torch.cuda.synchronize()
+                total_time += start.elapsed_time(end)  
+
             self.trainLoss += loss.item()
             output = torch.argmax(output, dim=1)
             # print(output)
@@ -150,20 +179,35 @@ class Experiment:
             # correct += pred.eq(target.data.view_as(pred)).sum()
             self.optimizer.step()
 
+
+        self.traint = total_time
+     
         self.tacc = 100. * correct / len(self.trainLoader.dataset)
      
-        self.traint = time.time() - start_t
         self.trainLoss = self.trainLoss * \
             self.trainLoader.batch_size / len(self.trainLoader.dataset)
 
         self.testLoss = 0.0
         correct = 0.0
+        inference_time = 0.0
         self.network.eval()
-        start_i = time.time()
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(self.testLoader):
                 data, target = data.to(self.device), target.to(self.device)
+                if not(torch.cuda.is_available()):
+                    start_t = time.time()
+                else:
+                    start = torch.cuda.Event(enable_timing=True)
+                    end = torch.cuda.Event(enable_timing=True)
+                    start.record()
                 output = self.network(data)
+                if not(torch.cuda.is_available()):
+                    inference_time += time.time() - start_t
+                else:
+                    end.record()
+                    torch.cuda.synchronize()
+                    inference_time += start.elapsed_time(end)  
+
                 loss = self.loss(output, target)
                 self.testLoss += loss.item()
                 output = torch.argmax(output, dim=1)
@@ -175,8 +219,9 @@ class Experiment:
                 # correct += pred.eq(target.data.view_as(pred)).sum()
             self.acc = 100. * correct / len(self.testLoader.dataset)
       
-
-            self.traini = (time.time() - start_i)/len(self.testLoader.dataset)
+    
+            self.traini = inference_time * \
+                self.testLoader.batch_size / len(self.testLoader.dataset)
             self.testLoss = self.testLoss * \
                 self.testLoader.batch_size / len(self.testLoader.dataset)
 

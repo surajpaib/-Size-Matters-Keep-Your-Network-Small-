@@ -126,7 +126,6 @@ if __name__ == "__main__":
                 kf = KFold(n_splits=5, shuffle=True, random_state=seed)
                 for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
                     # new fold - network from scratch
-                    model = Network(model_dict)
                     params_dict["fold"] = i_fold+1
                     # set the dataloaders for the fold
                     train = torch.utils.data.Subset(dataset, train_index)
@@ -135,10 +134,9 @@ if __name__ == "__main__":
                     test_loader = torch.utils.data.DataLoader(test, batch_size=params_dict["batch_size_test"], shuffle=True)
 
                     # set up the experiment
-                    experiment.set_network(model)
+                    experiment.set_network(model_dict)
                     experiment.set_loaders(train_loader, test_loader)
                     experiment.set_loss(torch.nn.CrossEntropyLoss())
-                    experiment.set_optimizer(torch.optim.SGD(model.parameters(), lr=params_dict["learning_rate"]))
                     experiment.set_metadata(params_dict)
                     iter_list = experiment.get_iteration_distribution(params_dict["iterations"], params_dict["distribution"])
                     # training loop
@@ -161,7 +159,7 @@ if __name__ == "__main__":
                             eval(_type).set_test_data(next(iter(test_loader)))
                             optimizer, model = eval(_type+'.'+_type_stam+'_model')(experiment.optimizer, experiment.network, eval(_type+'.'+_method))
                             experiment.set_optimizer(optimizer)
-                            experiment.set_network(model)
+                            experiment.update_network(model)
 
                             if params_dict['type'] == "Shifting" and params_dict['method2'] != "none":
                                 #Growing after the pruning
@@ -169,7 +167,7 @@ if __name__ == "__main__":
                                 growing.set_test_data(next(iter(test_loader)))
                                 optimizer, model = growing.grow_model(experiment.optimizer, experiment.network, eval('growing.'+_method2))
                                 experiment.set_optimizer(optimizer)
-                                experiment.set_network(model)
+                                experiment.update_network(model)
 
                             experiment.save_weights({
                                     'epoch': epoch,
@@ -184,5 +182,7 @@ if __name__ == "__main__":
                                     'params': experiment.params_dict
                                 }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
 
-                        print('Distribution: ',distributions,' Percentage: ',str(perc_iter_tuple),' Fold ',str(i_fold),' epoch ',str(epoch))
-                        experiment.train_epoch(epoch)
+                        print('Distribution: ', distributions, ' Percentage: ', str(perc_iter_tuple), ' Fold ', str(i_fold), ' Epoch: ', str(epoch))
+                        epoch_vals = experiment.train_epoch(epoch)
+                        print(epoch_vals)
+                        print(experiment.network)
