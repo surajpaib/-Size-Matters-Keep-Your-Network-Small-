@@ -73,10 +73,27 @@ class Growing(BaseClass):
                 meaned_l1_layer.append(l1_norm_layer)
 
         #dont take into account output layer
-        total_number_neurons = np.sum(neurons_per_layer)
-        total_l1 = np.sum(meaned_l1_layer)
+        total_number_neurons = np.nansum(neurons_per_layer)
+        total_l1 = np.nansum(meaned_l1_layer)
 
-        add_per_layer = [int(round((x/total_l1)*total_number_neurons*self.growing_perc,0)) for x in meaned_l1_layer]
+        #add_per_layer = [int(round((x/total_l1)*total_number_neurons*self.growing_perc,0)) for x in meaned_l1_layer]
+
+        add_per_layer = []
+
+        for x in meaned_l1_layer:
+            try:
+                add_p_layer = int(round((x/total_l1)*total_number_neurons*self.growing_perc,0))
+            except:
+                print('Could not calculate layer cond value, so 0 used, parameters:')
+                print('total_cond ',total_l1)
+                print('total number neurons ', total_number_neurons)
+                print('cond of layer ', x)
+                add_p_layer = 0
+                send_slack_message('growing except has occured')
+
+            add_per_layer.append(add_p_layer)
+
+
 
         self.number_neurons_per_layer = add_per_layer
 
