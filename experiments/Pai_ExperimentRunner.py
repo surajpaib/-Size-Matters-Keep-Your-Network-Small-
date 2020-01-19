@@ -134,10 +134,10 @@ if __name__ == "__main__":
                 test_loader = torch.utils.data.DataLoader(test, batch_size=params_dict["batch_size_test"], shuffle=True)
 
                 # set up the experiment
+                experiment.set_metadata(params_dict)
                 experiment.set_network(model_dict)
                 experiment.set_loaders(train_loader, test_loader)
                 experiment.set_loss(torch.nn.CrossEntropyLoss())
-                experiment.set_metadata(params_dict)
                 iter_list = experiment.get_iteration_distribution(params_dict["iterations"], params_dict["distribution"])
                 # training loop
                 for idx, epoch in enumerate(range(params_dict["n_epochs"])):

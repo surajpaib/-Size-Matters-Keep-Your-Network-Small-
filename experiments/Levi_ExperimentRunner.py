@@ -137,6 +137,7 @@ if __name__ == "__main__":
                     test, batch_size=params_dict["batch_size_test"], shuffle=True)
 
                 # set up the experiment
+                experiment.set_metadata(params_dict)
                 experiment.set_network(model_dict)
                 experiment.set_loaders(train_loader, test_loader)
                 experiment.set_loss(torch.nn.CrossEntropyLoss())
