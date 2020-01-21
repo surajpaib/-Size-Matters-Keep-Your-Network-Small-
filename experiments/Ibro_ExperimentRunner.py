@@ -34,7 +34,7 @@ if __name__ == "__main__":
         os.mkdir('models')
 
     for distributions in ["equal", "incr", "decr"]:
-        for perc_iter_tuple in [(0.1088*2, 0.1221, 20), (0.2057*2, 0.259, 10), (0.0718, 0.1547, 10), (0.0353, 0.0732, 20), (0.2057, 0.259, 10), (0.0353, 0.0367, 20)]:
+        for perc_iter_tuple in [(0.0718, 0.1547, 10), (0.0353, 0.0732, 20), (0.2057, 0.259, 10), (0.0353, 0.0367, 20)]:
             # for method in ["l1_norm", "layer_conductance"]:
 
             params_dict = {
@@ -142,7 +142,7 @@ if __name__ == "__main__":
                 experiment.set_network(model_dict)
                 experiment.set_loaders(train_loader, test_loader)
                 experiment.set_loss(torch.nn.CrossEntropyLoss())
-        
+
                 iter_list = experiment.get_iteration_distribution(
                     params_dict["iterations"], params_dict["distribution"])
                 # training loop
@@ -190,7 +190,9 @@ if __name__ == "__main__":
                             'params': experiment.params_dict
                         }, 'models/{}_{}_{}_{}.pth.tar'.format(uid, i_fold+1, epoch, _method))
 
-                    logging.info('Distribution: ', distributions, ' Percentage: ', str(perc_iter_tuple), ' Fold ', str(i_fold), ' Epoch: ', str(epoch))
+                    logging.info('Distribution: ', distributions, ' Percentage: ', str(
+                        perc_iter_tuple), ' Fold ', str(i_fold), ' Epoch: ', str(epoch))
                     epoch_vals = experiment.train_epoch(epoch)
                     logging.info(epoch_vals)
                     logging.info(experiment.network)
+                break
