@@ -101,6 +101,7 @@ for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
     # set up the experiment
     experiment.set_metadata(params_dict)
     experiment.set_network(model_dict)
+    experiment.update_network(model)
     experiment.set_loaders(train_loader, test_loader)
     experiment.set_loss(torch.nn.CrossEntropyLoss())
 
