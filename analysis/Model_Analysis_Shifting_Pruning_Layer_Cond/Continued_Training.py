@@ -9,15 +9,11 @@ sys.path.append('../../framework')
 sys.path.append('../../application')
 
 from NetworkClass import Network        
-
-
-
-# In[ ]:
-
-
+import copy
 import logging
 import string
 import random
+from copy import deepcopy
 import os
 import torch
 import torchvision
@@ -38,7 +34,7 @@ for i, layer in enumerate(loaded["params"]["model"]['network']['hidden_layer']):
     else:
         model_dict['network']['hidden_layer'][i]['units'] = loaded["state_dict"]['hidden_layers.{}.weight'.format(i-1)].shape[0]
 
-model = Network(new_model_dict)
+model = Network(model_dict)
 model.load_state_dict(loaded["state_dict"])
 
 
@@ -105,6 +101,7 @@ for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
     # set up the experiment
     experiment.set_metadata(params_dict)
     experiment.set_network(model_dict)
+    experiment.update_network(model)
     experiment.set_loaders(train_loader, test_loader)
     experiment.set_loss(torch.nn.CrossEntropyLoss())
 
