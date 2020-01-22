@@ -89,7 +89,6 @@ for i_fold, (train_index, test_index) in enumerate(kf.split(dataset)):
     print("Fold: {}".format(i_fold+1))
     # new fold - network from scratch
     experiment = Experiment(device)
-    model = Network(model_dict)
     params_dict["fold"] = i_fold+1
     # set the dataloaders for the fold
     train = torch.utils.data.Subset(dataset, train_index)
