@@ -10,7 +10,7 @@ from captum.attr import LayerConductance
 
 # def send_slack_message(message):
 
-#     slack_token = 'xoxp-754321514487-754671333574-911014833008-f9b7135688081ff589a9ee53988bbcee'
+#     slack_token = 'TOKEN HERE'
 #     client = slack.WebClient(token=slack_token)
 #     response = client.chat_postMessage(
 #         channel='bots',
